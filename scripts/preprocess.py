@@ -5,18 +5,20 @@ def process_txt(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         content = f.read()
 
-    cleaned = content.strip()
-
-    return cleaned
+    return content.strip()
 
 
 def process_json(file_path):
     import json
 
-    with open(file_path, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
 
-    return json.dumps(data, indent=2)
+        return json.dumps(data, indent=2)
+
+    except Exception as e:
+        return f"INVALID JSON FILE: {str(e)}"
 
 
 def process_file(file_path):

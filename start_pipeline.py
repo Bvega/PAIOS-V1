@@ -2,6 +2,7 @@ import os
 import json
 from datetime import datetime
 from scripts.preprocess import process_file
+from scripts.metadata import generate_metadata
 
 
 def load_config():
@@ -68,7 +69,7 @@ def main():
                 log(f"Error moving file {file}: {str(e)}", log_file)
                 continue
 
-            # PREPROCESSING STEP
+            # PROCESS FILE
             processed_content = process_file(raw_destination)
 
             if processed_content:
@@ -79,6 +80,17 @@ def main():
                     f.write(processed_content)
 
                 log(f"Processed file saved: {output_file}", log_file)
+
+                # GENERATE METADATA
+                metadata = generate_metadata(raw_destination, ext)
+
+                metadata_file = os.path.splitext(file)[0] + ".meta.json"
+                metadata_path = os.path.join(processed_path, metadata_file)
+
+                with open(metadata_path, "w", encoding="utf-8") as f:
+                    json.dump(metadata, f, indent=2)
+
+                log(f"Metadata saved: {metadata_file}", log_file)
 
     log("PAIOS pipeline finished", log_file)
 
