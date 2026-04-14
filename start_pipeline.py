@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 from scripts.preprocess import process_file
 from scripts.metadata import generate_metadata
+from scripts.indexer import build_index
 
 
 def load_config():
@@ -34,6 +35,7 @@ def main():
     inbox_path = config["paths"]["inbox"]
     raw_path = config["paths"]["raw"]
     processed_path = config["paths"]["processed"]
+    index_path = os.path.join(config["paths"]["index"], "index.json")
     supported_types = config["file_types"]["supported"]
 
     files = os.listdir(inbox_path)
@@ -69,7 +71,6 @@ def main():
                 log(f"Error moving file {file}: {str(e)}", log_file)
                 continue
 
-            # PROCESS FILE
             processed_content = process_file(raw_destination)
 
             if processed_content:
@@ -81,7 +82,6 @@ def main():
 
                 log(f"Processed file saved: {output_file}", log_file)
 
-                # GENERATE METADATA
                 metadata = generate_metadata(raw_destination, ext)
 
                 metadata_file = os.path.splitext(file)[0] + ".meta.json"
@@ -91,6 +91,10 @@ def main():
                     json.dump(metadata, f, indent=2)
 
                 log(f"Metadata saved: {metadata_file}", log_file)
+
+    # BUILD INDEX
+    build_index(processed_path, index_path)
+    log("Index updated", log_file)
 
     log("PAIOS pipeline finished", log_file)
 
