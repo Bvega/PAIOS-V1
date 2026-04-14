@@ -1,6 +1,7 @@
 import os
 import json
 from datetime import datetime
+from scripts.preprocess import process_file
 
 
 def load_config():
@@ -31,6 +32,7 @@ def main():
 
     inbox_path = config["paths"]["inbox"]
     raw_path = config["paths"]["raw"]
+    processed_path = config["paths"]["processed"]
     supported_types = config["file_types"]["supported"]
 
     files = os.listdir(inbox_path)
@@ -53,17 +55,30 @@ def main():
                 log(f"Skipped unsupported file: {file}", log_file)
                 continue
 
-            destination = os.path.join(raw_path, file)
+            raw_destination = os.path.join(raw_path, file)
 
-            if os.path.exists(destination):
+            if os.path.exists(raw_destination):
                 log(f"Duplicate file skipped: {file}", log_file)
                 continue
 
             try:
-                os.rename(file_path, destination)
+                os.rename(file_path, raw_destination)
                 log(f"Moved file to raw: {file}", log_file)
             except Exception as e:
                 log(f"Error moving file {file}: {str(e)}", log_file)
+                continue
+
+            # PREPROCESSING STEP
+            processed_content = process_file(raw_destination)
+
+            if processed_content:
+                output_file = os.path.splitext(file)[0] + ".txt"
+                output_path = os.path.join(processed_path, output_file)
+
+                with open(output_path, "w", encoding="utf-8") as f:
+                    f.write(processed_content)
+
+                log(f"Processed file saved: {output_file}", log_file)
 
     log("PAIOS pipeline finished", log_file)
 
