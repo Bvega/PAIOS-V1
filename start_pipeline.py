@@ -1,102 +1,115 @@
 import os
 import json
 from datetime import datetime
+
 from scripts.preprocess import process_file
 from scripts.metadata import generate_metadata
-from scripts.indexer import build_index
+from scripts.indexer import update_index
+from scripts.summarize import summarize_text
 
 
 def load_config():
-    with open("config/config.json", "r") as f:
+    with open("config/config.json", "r", encoding="utf-8") as f:
         return json.load(f)
 
 
-def ensure_paths(config):
-    for path in config["paths"].values():
-        os.makedirs(path, exist_ok=True)
-
-
-def log(message, log_file):
+def log(message):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    entry = f"[{timestamp}] {message}\n"
-    print(entry.strip())
-    with open(log_file, "a") as f:
-        f.write(entry)
+    print(f"[{timestamp}] {message}")
+
+
+def read_file_content(file_path):
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return ""
 
 
 def main():
     config = load_config()
-    log_file = config["logging"]["log_file"]
 
-    ensure_paths(config)
-
-    log("PAIOS pipeline started", log_file)
-
-    inbox_path = config["paths"]["inbox"]
-    raw_path = config["paths"]["raw"]
-    processed_path = config["paths"]["processed"]
-    index_path = os.path.join(config["paths"]["index"], "index.json")
+    inbox = "inbox"
+    raw_dir = "memory/raw"
+    processed_dir = "memory/processed"
+    summaries_dir = "memory/summaries"
     supported_types = config["file_types"]["supported"]
 
-    files = os.listdir(inbox_path)
+    os.makedirs(raw_dir, exist_ok=True)
+    os.makedirs(processed_dir, exist_ok=True)
+    os.makedirs(summaries_dir, exist_ok=True)
+
+    files = os.listdir(inbox)
+
+    log("PAIOS pipeline started")
 
     if not files:
-        log("No files found in inbox", log_file)
-    else:
-        log(f"Files detected: {files}", log_file)
+        log("No files found in inbox")
+        update_index()
+        log("Index updated")
+        log("PAIOS pipeline finished")
+        return
 
-        for file in files:
-            file_path = os.path.join(inbox_path, file)
+    log(f"Files detected: {files}")
 
-            if not os.path.isfile(file_path):
-                log(f"Skipped non-file item: {file}", log_file)
-                continue
+    for file in files:
+        source_path = os.path.join(inbox, file)
 
-            _, ext = os.path.splitext(file)
+        if not os.path.isfile(source_path):
+            log(f"Skipped non-file item: {file}")
+            continue
 
-            if ext.lower() not in supported_types:
-                log(f"Skipped unsupported file: {file}", log_file)
-                continue
+        _, ext = os.path.splitext(file)
 
-            raw_destination = os.path.join(raw_path, file)
+        if ext.lower() not in supported_types:
+            log(f"Skipped unsupported file: {file}")
+            continue
 
-            if os.path.exists(raw_destination):
-                log(f"Duplicate file skipped: {file}", log_file)
-                continue
+        raw_destination = os.path.join(raw_dir, file)
 
-            try:
-                os.rename(file_path, raw_destination)
-                log(f"Moved file to raw: {file}", log_file)
-            except Exception as e:
-                log(f"Error moving file {file}: {str(e)}", log_file)
-                continue
+        if os.path.exists(raw_destination):
+            log(f"Duplicate file skipped: {file}")
+            continue
 
-            processed_content = process_file(raw_destination)
+        os.rename(source_path, raw_destination)
+        log(f"Moved file to raw: {file}")
 
-            if processed_content:
-                output_file = os.path.splitext(file)[0] + ".txt"
-                output_path = os.path.join(processed_path, output_file)
+        processed_content = process_file(raw_destination)
 
-                with open(output_path, "w", encoding="utf-8") as f:
-                    f.write(processed_content)
+        if processed_content is None:
+            log(f"Processing returned no content: {file}")
+            continue
 
-                log(f"Processed file saved: {output_file}", log_file)
+        processed_filename = os.path.splitext(file)[0] + ".txt"
+        processed_path = os.path.join(processed_dir, processed_filename)
 
-                metadata = generate_metadata(raw_destination, ext)
+        with open(processed_path, "w", encoding="utf-8") as f:
+            f.write(processed_content)
 
-                metadata_file = os.path.splitext(file)[0] + ".meta.json"
-                metadata_path = os.path.join(processed_path, metadata_file)
+        log(f"Processed file saved: {processed_filename}")
 
-                with open(metadata_path, "w", encoding="utf-8") as f:
-                    json.dump(metadata, f, indent=2)
+        metadata = generate_metadata(raw_destination, ext)
+        metadata_path = processed_path.replace(".txt", ".meta.json")
 
-                log(f"Metadata saved: {metadata_file}", log_file)
+        with open(metadata_path, "w", encoding="utf-8") as f:
+            json.dump(metadata, f, indent=2)
 
-    # BUILD INDEX
-    build_index(processed_path, index_path)
-    log("Index updated", log_file)
+        log(f"Metadata saved: {os.path.basename(metadata_path)}")
 
-    log("PAIOS pipeline finished", log_file)
+        content = read_file_content(processed_path)
+        summary = summarize_text(content)
+
+        summary_filename = processed_filename.replace(".txt", ".summary.txt")
+        summary_path = os.path.join(summaries_dir, summary_filename)
+
+        with open(summary_path, "w", encoding="utf-8") as f:
+            f.write(summary)
+
+        log(f"Summary saved: {summary_filename}")
+
+    update_index()
+    log("Index updated")
+    log("PAIOS pipeline finished")
 
 
 if __name__ == "__main__":
