@@ -1,16 +1,21 @@
 import sys
 import os
+import re
 from scripts.search import search_index
 
-# Central index file used by the CLI query tool
 INDEX_PATH = "memory/index/index.json"
 
 
+def highlight(text, keyword):
+    """
+    Case-insensitive keyword highlighting.
+    Wraps matches with [WORD]
+    """
+    pattern = re.compile(re.escape(keyword), re.IGNORECASE)
+    return pattern.sub(lambda m: f"[{m.group(0).upper()}]", text)
+
+
 def run_query(query):
-    """
-    Run a search query against the local PAIOS index and print
-    clean, human-readable results.
-    """
     results = search_index(INDEX_PATH, query)
 
     print("\nQuery Results:\n")
@@ -19,30 +24,29 @@ def run_query(query):
         print("No matches found.")
         return
 
-    # Loop through each matching result and display it clearly
     for r in results:
-        print(f"File: {r.get('file_name')}")
-        print(f"Score: {r.get('score')}")
+        file_name = r.get("file_name")
+        score = r.get("score")
+
+        print(f"File: {file_name}")
+        print(f"Score: {score}")
 
         summary_path = r.get("summary_path")
 
-        # If a summary exists, print it inside the result block
         if summary_path and os.path.exists(summary_path):
             print("\nSummary:")
             with open(summary_path, "r", encoding="utf-8") as f:
-                print(f.read())
+                content = f.read()
+                print(highlight(content, query))
         else:
             print("No summary available.")
 
-        # Separator between results for readability
         print("\n" + "-" * 40 + "\n")
 
 
 if __name__ == "__main__":
-    # Require at least one query argument from the command line
     if len(sys.argv) < 2:
         print('Usage: python3 cli.py "your query here"')
     else:
-        # Join all command-line words into one search query
         query = " ".join(sys.argv[1:])
         run_query(query)
