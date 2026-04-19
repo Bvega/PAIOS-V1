@@ -14,9 +14,16 @@ def read_file_safe(path):
     return ""
 
 
+def count_occurrences(text, query):
+    """
+    Count how many times a query appears in text.
+    """
+    return text.count(query)
+
+
 def get_preview_snippet(path, query, window=80):
     """
-    Extract a small snippet around the first match of the query.
+    Extract a snippet around the first match.
     """
     if not path or not os.path.exists(path):
         return None
@@ -48,6 +55,7 @@ def search_index(index_path, query):
         text_path = entry.get("text_path")
 
         summary_content = read_file_safe(summary_path)
+        text_content = read_file_safe(text_path)
 
         score = 0
 
@@ -55,15 +63,18 @@ def search_index(index_path, query):
         if query_lower in file_name:
             score += 2
 
-        # summary/content match
-        if query_lower in summary_content:
-            score += 3
+        # summary occurrences
+        summary_hits = count_occurrences(summary_content, query_lower)
+        score += summary_hits * 3
 
-        # NEW: preview snippet from processed text
+        # text occurrences (NEW)
+        text_hits = count_occurrences(text_content, query_lower)
+        score += text_hits * 2
+
+        # preview snippet
         snippet = get_preview_snippet(text_path, query)
         if snippet:
             entry["preview"] = snippet
-            score += 2
 
         if score > 0:
             entry["score"] = score
