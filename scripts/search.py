@@ -74,7 +74,12 @@ def search_index(index_path, query):
         exact_phrase = True
         query_lower = query_lower[1:-1].strip()
 
-    terms = query_lower.split()
+    # Detect explicit OR mode using |
+    or_mode = "|" in query_lower
+    if or_mode:
+        terms = [term.strip() for term in query_lower.split("|") if term.strip()]
+    else:
+        terms = query_lower.split()
 
     for entry in index:
         file_name = entry.get("file_name", "").lower()
@@ -104,7 +109,7 @@ def search_index(index_path, query):
                 matched_terms += 1
 
         else:
-            # Normal multi-word mode
+            # Normal / OR mode
             for term in terms:
                 term_matched = False
 
@@ -125,7 +130,8 @@ def search_index(index_path, query):
                 if term_matched:
                     matched_terms += 1
 
-            if matched_terms > 1:
+            # Bonus only for normal multi-word mode, not explicit OR mode
+            if matched_terms > 1 and not or_mode:
                 score += matched_terms * 2
 
         snippet = get_preview_snippet(text_path, query_lower)
