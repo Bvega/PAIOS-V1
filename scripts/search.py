@@ -23,7 +23,8 @@ def count_occurrences(text, term):
 
 def get_preview_snippet(path, query, window=80):
     """
-    Extract a snippet around the first match of any query term.
+    Extract a snippet around the first match of the full query
+    or the first matching term.
     """
     if not path or not os.path.exists(path):
         return None
@@ -32,22 +33,32 @@ def get_preview_snippet(path, query, window=80):
         content = f.read()
 
     content_lower = content.lower()
-    terms = query.lower().split()
+    query_lower = query.lower()
 
-    first_idx = -1
-    first_term = ""
+    # Try full query first
+    idx = content_lower.find(query_lower)
+    match_text = query
 
-    for term in terms:
-        idx = content_lower.find(term)
-        if idx != -1 and (first_idx == -1 or idx < first_idx):
-            first_idx = idx
-            first_term = term
+    # Fallback to individual terms
+    if idx == -1:
+        terms = query_lower.split()
+        first_idx = -1
+        first_term = ""
 
-    if first_idx == -1:
-        return None
+        for term in terms:
+            term_idx = content_lower.find(term)
+            if term_idx != -1 and (first_idx == -1 or term_idx < first_idx):
+                first_idx = term_idx
+                first_term = term
 
-    start = max(0, first_idx - window)
-    end = min(len(content), first_idx + len(first_term) + window)
+        if first_idx == -1:
+            return None
+
+        idx = first_idx
+        match_text = first_term
+
+    start = max(0, idx - window)
+    end = min(len(content), idx + len(match_text) + window)
 
     return content[start:end].replace("\n", " ")
 
@@ -55,7 +66,15 @@ def get_preview_snippet(path, query, window=80):
 def search_index(index_path, query):
     index = load_index(index_path)
     results = []
-    terms = query.lower().split()
+    query_lower = query.lower().strip()
+
+    # Detect exact phrase mode if wrapped in quotes
+    exact_phrase = False
+    if len(query_lower) >= 2 and query_lower.startswith('"') and query_lower.endswith('"'):
+        exact_phrase = True
+        query_lower = query_lower[1:-1].strip()
+
+    terms = query_lower.split()
 
     for entry in index:
         file_name = entry.get("file_name", "").lower()
@@ -68,34 +87,48 @@ def search_index(index_path, query):
         score = 0
         matched_terms = 0
 
-        for term in terms:
-            term_matched = False
-
-            # filename match
-            if term in file_name:
-                score += 2
-                term_matched = True
-
-            # summary occurrences
-            summary_hits = count_occurrences(summary_content, term)
-            if summary_hits > 0:
-                score += summary_hits * 3
-                term_matched = True
-
-            # text occurrences
-            text_hits = count_occurrences(text_content, term)
-            if text_hits > 0:
-                score += text_hits * 2
-                term_matched = True
-
-            if term_matched:
+        if exact_phrase:
+            # Exact phrase mode
+            if query_lower in file_name:
+                score += 5
                 matched_terms += 1
 
-        # bonus if multiple query terms matched
-        if matched_terms > 1:
-            score += matched_terms * 2
+            summary_hits = count_occurrences(summary_content, query_lower)
+            if summary_hits > 0:
+                score += summary_hits * 6
+                matched_terms += 1
 
-        snippet = get_preview_snippet(text_path, query)
+            text_hits = count_occurrences(text_content, query_lower)
+            if text_hits > 0:
+                score += text_hits * 5
+                matched_terms += 1
+
+        else:
+            # Normal multi-word mode
+            for term in terms:
+                term_matched = False
+
+                if term in file_name:
+                    score += 2
+                    term_matched = True
+
+                summary_hits = count_occurrences(summary_content, term)
+                if summary_hits > 0:
+                    score += summary_hits * 3
+                    term_matched = True
+
+                text_hits = count_occurrences(text_content, term)
+                if text_hits > 0:
+                    score += text_hits * 2
+                    term_matched = True
+
+                if term_matched:
+                    matched_terms += 1
+
+            if matched_terms > 1:
+                score += matched_terms * 2
+
+        snippet = get_preview_snippet(text_path, query_lower)
         if snippet:
             entry["preview"] = snippet
 
