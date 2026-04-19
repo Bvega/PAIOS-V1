@@ -31,6 +31,11 @@ def run_query(query):
         print(f"File: {file_name}")
         print(f"Score: {score}")
 
+        preview = r.get("preview")
+        if preview:
+            print("\nPreview:")
+            print(highlight(preview, query))
+
         summary_path = r.get("summary_path")
 
         if summary_path and os.path.exists(summary_path):
