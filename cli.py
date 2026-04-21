@@ -57,6 +57,14 @@ def ensure_exports_dir():
     os.makedirs(EXPORTS_DIR, exist_ok=True)
 
 
+def build_export_filename(prefix):
+    """
+    Build a timestamped export filename.
+    """
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return os.path.join(EXPORTS_DIR, f"{prefix}_{timestamp}.txt")
+
+
 def export_last_results():
     """
     Export the most recent query results to a timestamped text file.
@@ -73,13 +81,10 @@ def export_last_results():
         return
 
     ensure_exports_dir()
-
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"query_export_{timestamp}.txt"
-    export_path = os.path.join(EXPORTS_DIR, filename)
+    export_path = build_export_filename("query_export")
 
     with open(export_path, "w", encoding="utf-8") as f:
-        f.write(f"PAIOS Query Export\n")
+        f.write("PAIOS Query Export\n")
         f.write(f"Query: {LAST_QUERY}\n")
         f.write("=" * 60 + "\n\n")
 
@@ -96,6 +101,64 @@ def export_last_results():
             f.write("\n" + "-" * 60 + "\n\n")
 
     print(f"Results exported to: {export_path}\n")
+
+
+def export_result(index, mode="full"):
+    """
+    Export one selected result.
+
+    Modes:
+    - full: summary + full content
+    - summary: summary only
+    - raw: full content only
+    """
+    if not LAST_RESULTS:
+        print("No results available to export.\n")
+        return
+
+    if index < 1 or index > len(LAST_RESULTS):
+        print("Invalid result number.\n")
+        return
+
+    ensure_exports_dir()
+
+    result = LAST_RESULTS[index - 1]
+    file_name = result.get("file_name", f"result_{index}")
+    base_name = os.path.splitext(file_name)[0]
+
+    export_path = build_export_filename(f"{base_name}_{mode}")
+
+    text_path = result.get("text_path")
+    summary_path = result.get("summary_path")
+
+    with open(export_path, "w", encoding="utf-8") as f:
+        f.write("PAIOS Selected Result Export\n")
+        f.write(f"Query: {LAST_QUERY}\n")
+        f.write(f"Result #: {index}\n")
+        f.write(f"File: {file_name}\n")
+        f.write(f"Mode: {mode}\n")
+        f.write("=" * 60 + "\n\n")
+
+        # Write summary when requested
+        if mode in ["summary", "full"]:
+            f.write("[Summary]\n")
+            if summary_path and os.path.exists(summary_path):
+                with open(summary_path, "r", encoding="utf-8") as summary_file:
+                    f.write(summary_file.read() + "\n")
+            else:
+                f.write("No summary available.\n")
+            f.write("\n" + "-" * 60 + "\n\n")
+
+        # Write raw/full content when requested
+        if mode in ["raw", "full"]:
+            f.write("[Full Content]\n")
+            if text_path and os.path.exists(text_path):
+                with open(text_path, "r", encoding="utf-8") as text_file:
+                    f.write(text_file.read() + "\n")
+            else:
+                f.write("File not found.\n")
+
+    print(f"Selected result exported to: {export_path}\n")
 
 
 def run_query(query):
@@ -122,10 +185,10 @@ def run_query(query):
         print("No matches found.")
         return
 
-    for idx, r in enumerate(results, 1):
-        print(f"Result #{idx} | File: {r.get('file_name')} | Score: {r.get('score')}")
+    for idx, result in enumerate(results, 1):
+        print(f"Result #{idx} | File: {result.get('file_name')} | Score: {result.get('score')}")
 
-        preview = r.get("preview")
+        preview = result.get("preview")
         if preview:
             print("\n[Preview]")
             print(highlight(preview, query))
@@ -163,8 +226,8 @@ def open_result(index, mode="full"):
     if mode in ["summary", "full"]:
         if summary_path and os.path.exists(summary_path):
             print("[Summary]")
-            with open(summary_path, "r", encoding="utf-8") as f:
-                print(f.read())
+            with open(summary_path, "r", encoding="utf-8") as summary_file:
+                print(summary_file.read())
             print_divider()
         else:
             print("No summary available.\n")
@@ -173,8 +236,8 @@ def open_result(index, mode="full"):
     if mode in ["raw", "full"]:
         if text_path and os.path.exists(text_path):
             print("[Full Content]")
-            with open(text_path, "r", encoding="utf-8") as f:
-                print(f.read())
+            with open(text_path, "r", encoding="utf-8") as text_file:
+                print(text_file.read())
         else:
             print("File not found.")
 
@@ -190,8 +253,8 @@ def show_history():
         return
 
     print("\nQuery History:")
-    for i, q in enumerate(QUERY_HISTORY, 1):
-        print(f"{i}. {q}")
+    for i, query in enumerate(QUERY_HISTORY, 1):
+        print(f"{i}. {query}")
     print()
 
 
@@ -234,6 +297,9 @@ def interactive_mode():
     print('- "open summary <n>" -> summary only')
     print('- "open raw <n>" -> raw content only')
     print('- "export" -> save last result set to outputs/')
+    print('- "export <n>" -> export one full result')
+    print('- "export summary <n>" -> export summary only')
+    print('- "export raw <n>" -> export full content only')
     print('- "exit" -> quit\n')
 
     while True:
@@ -260,6 +326,28 @@ def interactive_mode():
         # Export last results
         if query.lower() == "export":
             export_last_results()
+            continue
+
+        # Export selected result
+        if query.lower().startswith("export "):
+            parts = query.split()
+
+            try:
+                if len(parts) == 2:
+                    export_result(int(parts[1]), "full")
+                elif len(parts) == 3:
+                    mode = parts[1]
+                    index = int(parts[2])
+
+                    if mode in ["summary", "raw"]:
+                        export_result(index, mode)
+                    else:
+                        print("Invalid export mode.\n")
+                else:
+                    print("Usage: export <n> | export summary <n> | export raw <n>\n")
+            except Exception:
+                print("Invalid export command format.\n")
+
             continue
 
         # Refine query
