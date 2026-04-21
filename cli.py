@@ -1,3 +1,4 @@
+
 import sys
 import os
 import re
@@ -11,8 +12,13 @@ INDEX_PATH = "memory/index/index.json"
 EXPORTS_DIR = "outputs"
 
 # --- Session memory ---
+# Stores all queries made during the session
 QUERY_HISTORY = []
+
+# Stores the last executed query
 LAST_QUERY = None
+
+# Stores last search results (used for open/export commands)
 LAST_RESULTS = []
 
 
@@ -64,23 +70,46 @@ def build_export_filename(prefix):
 
 def suggest_actions():
     """
-    Suggest next actions based on system state.
-    """
-    if not LAST_RESULTS:
-        return
+    Suggest next actions based on the current result set.
 
+    Rules:
+    - No results -> suggest broadening or changing query
+    - One result -> suggest opening it directly
+    - Many results -> suggest refining
+    - If a summary exists in first result -> suggest opening summary
+    """
     print("\nSuggestions:")
 
-    # Always suggest refining
+    # No results: help user recover
+    if not LAST_RESULTS:
+        print('- try a broader query')
+        print('- try fewer keywords')
+        print('- try OR mode, for example: test | summary')
+        print('- try exact phrase mode, for example: "line two for summary"')
+        print()
+        return
+
+    first_result = LAST_RESULTS[0]
+    first_summary = first_result.get("summary_path")
+
+    # One strong result: suggest direct inspection
+    if len(LAST_RESULTS) == 1:
+        print('- open 1')
+        if first_summary and os.path.exists(first_summary):
+            print('- open summary 1')
+        print('- export 1')
+        print()
+        return
+
+    # Many results: suggest narrowing the search
     print('- refine summary')
     print('- refine <more keywords>')
-
-    # Suggest opening first result
     print('- open 1')
 
-    # Suggest exporting
-    print('- export 1')
+    if first_summary and os.path.exists(first_summary):
+        print('- open summary 1')
 
+    print('- export 1')
     print()
 
 
@@ -89,6 +118,16 @@ def suggest_actions():
 # =========================
 
 def export_last_results():
+    """
+    Export the most recent query results to a timestamped text file.
+
+    Output includes:
+    - query used
+    - result numbering
+    - file names
+    - scores
+    - previews
+    """
     if not LAST_RESULTS or not LAST_QUERY:
         print("No results available to export.\n")
         return
@@ -117,6 +156,14 @@ def export_last_results():
 
 
 def export_result(index, mode="full"):
+    """
+    Export one selected result.
+
+    Modes:
+    - full: summary + full content
+    - summary: summary only
+    - raw: full content only
+    """
     if not LAST_RESULTS:
         print("No results available to export.\n")
         return
@@ -169,6 +216,15 @@ def export_result(index, mode="full"):
 # =========================
 
 def run_query(query):
+    """
+    Execute a search query and store results in session memory.
+
+    Responsibilities:
+    - Call search engine
+    - Save query + results
+    - Display preview of each result
+    - Show context-aware suggestions
+    """
     global LAST_QUERY, LAST_RESULTS
 
     results = search_index(INDEX_PATH, query)
@@ -181,6 +237,7 @@ def run_query(query):
 
     if not results:
         print("No matches found.")
+        suggest_actions()
         return
 
     for idx, result in enumerate(results, 1):
@@ -193,11 +250,18 @@ def run_query(query):
 
         print_divider()
 
-    # NEW: Suggest actions after results
     suggest_actions()
 
 
 def open_result(index, mode="full"):
+    """
+    Open a selected result based on its index.
+
+    Modes:
+    - full -> show summary + full content
+    - summary -> show only summary
+    - raw -> show only full file content
+    """
     if not LAST_RESULTS:
         print("No results available.\n")
         return
@@ -234,6 +298,9 @@ def open_result(index, mode="full"):
 
 
 def show_history():
+    """
+    Display all previous queries from this session.
+    """
     if not QUERY_HISTORY:
         print("No query history yet.")
         return
@@ -245,6 +312,13 @@ def show_history():
 
 
 def refine_query(extra_words):
+    """
+    Extend the last query with additional words.
+
+    Example:
+    LAST_QUERY = "test"
+    refine summary -> "test summary"
+    """
     global LAST_QUERY
 
     if not LAST_QUERY:
@@ -261,6 +335,14 @@ def refine_query(extra_words):
 # =========================
 
 def interactive_mode():
+    """
+    Main loop for interactive CLI session.
+
+    Handles:
+    - user input
+    - command parsing
+    - routing to appropriate functions
+    """
     print_header("PAIOS Interactive Mode")
 
     print("Commands:")
@@ -308,7 +390,9 @@ def interactive_mode():
                     mode = parts[1]
                     index = int(parts[2])
                     export_result(index, mode)
-            except:
+                else:
+                    print("Invalid export command.\n")
+            except Exception:
                 print("Invalid export command.\n")
             continue
 
@@ -323,7 +407,9 @@ def interactive_mode():
                     open_result(int(parts[1]), "full")
                 elif len(parts) == 3:
                     open_result(int(parts[2]), parts[1])
-            except:
+                else:
+                    print("Invalid open command.\n")
+            except Exception:
                 print("Invalid open command.\n")
             continue
 
