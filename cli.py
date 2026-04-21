@@ -8,6 +8,7 @@ INDEX_PATH = "memory/index/index.json"
 # --- Session memory ---
 QUERY_HISTORY = []
 LAST_QUERY = None
+LAST_RESULTS = []
 
 
 def highlight(text, keyword):
@@ -49,13 +50,13 @@ def parse_args():
 
 
 def run_query(query, mode="full", limit=None):
-    global LAST_QUERY
+    global LAST_QUERY, LAST_RESULTS
 
     results = search_index(INDEX_PATH, query)
 
-    # Save query to session memory
     QUERY_HISTORY.append(query)
     LAST_QUERY = query
+    LAST_RESULTS = results
 
     print_header(f"Query Results: {query}")
 
@@ -72,29 +73,47 @@ def run_query(query, mode="full", limit=None):
 
         print(f"Result #{idx} | File: {file_name} | Score: {score}")
 
-        if mode == "compact":
-            preview = r.get("preview")
-            if preview:
-                print(highlight(preview[:120], query))
-            print_divider()
-            continue
-
         preview = r.get("preview")
         if preview:
             print("\n[Preview]")
             print(highlight(preview, query))
 
-        summary_path = r.get("summary_path")
-        if summary_path and os.path.exists(summary_path):
-            print("\n[Summary]")
-            with open(summary_path, "r", encoding="utf-8") as f:
-                content = f.read()
-                print(highlight(content, query))
-        else:
-            print("\n[Summary]")
-            print("No summary available.")
-
         print_divider()
+
+
+def open_result(index):
+    """
+    Open full content of selected result
+    """
+    if not LAST_RESULTS:
+        print("No results available. Run a query first.\n")
+        return
+
+    if index < 1 or index > len(LAST_RESULTS):
+        print("Invalid result number.\n")
+        return
+
+    result = LAST_RESULTS[index - 1]
+
+    text_path = result.get("text_path")
+    summary_path = result.get("summary_path")
+
+    print_header(f"Opening Result #{index}")
+
+    if summary_path and os.path.exists(summary_path):
+        print("[Summary]")
+        with open(summary_path, "r", encoding="utf-8") as f:
+            print(f.read())
+        print_divider()
+
+    if text_path and os.path.exists(text_path):
+        print("[Full Content]")
+        with open(text_path, "r", encoding="utf-8") as f:
+            print(f.read())
+    else:
+        print("File not found.")
+
+    print_divider()
 
 
 def show_history():
@@ -109,13 +128,6 @@ def show_history():
 
 
 def refine_query(extra_words):
-    """
-    Combine the last query with new refinement terms.
-    Example:
-    last query = "test"
-    refine summary
-    new query = "test summary"
-    """
     global LAST_QUERY
 
     if not LAST_QUERY:
@@ -128,14 +140,13 @@ def refine_query(extra_words):
 
 
 def interactive_mode():
-    global LAST_QUERY
-
     print_header("PAIOS Interactive Mode")
     print("Commands:")
     print('- type a query')
     print('- "history" -> show past queries')
     print('- "again" -> repeat last query')
-    print('- "refine <extra words>" -> extend last query')
+    print('- "refine <words>" -> extend last query')
+    print('- "open <number>" -> open result')
     print('- "exit" -> quit\n')
 
     while True:
@@ -161,7 +172,15 @@ def interactive_mode():
             if extra_words:
                 refine_query(extra_words)
             else:
-                print("Usage: refine <extra words>\n")
+                print("Usage: refine <words>\n")
+            continue
+
+        if query.lower().startswith("open "):
+            try:
+                idx = int(query.split()[1])
+                open_result(idx)
+            except:
+                print("Usage: open <result number>\n")
             continue
 
         if not query:
@@ -178,6 +197,6 @@ if __name__ == "__main__":
         query, mode, limit = parse_args()
 
         if not query:
-            print('Usage: python3 cli.py "your query here" [--compact] [--limit=N]')
+            print('Usage: python3 cli.py "your query here"')
         else:
             run_query(query, mode, limit)
