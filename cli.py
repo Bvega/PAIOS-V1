@@ -11,13 +11,8 @@ INDEX_PATH = "memory/index/index.json"
 EXPORTS_DIR = "outputs"
 
 # --- Session memory ---
-# Stores all queries made during the session
 QUERY_HISTORY = []
-
-# Stores the last executed query
 LAST_QUERY = None
-
-# Stores last search results (used for open/export commands)
 LAST_RESULTS = []
 
 
@@ -35,7 +30,6 @@ def highlight(text, keyword):
 def print_header(title):
     """
     Prints a formatted header block.
-    Used for sections like results and open views.
     """
     print("\n" + "=" * 60)
     print(title.upper())
@@ -45,14 +39,13 @@ def print_header(title):
 def print_divider():
     """
     Prints a separator between results or sections.
-    Improves readability in CLI output.
     """
     print("\n" + "-" * 60 + "\n")
 
 
 def ensure_exports_dir():
     """
-    Ensure the exports directory exists before saving files.
+    Ensure the exports directory exists.
     """
     os.makedirs(EXPORTS_DIR, exist_ok=True)
 
@@ -65,17 +58,37 @@ def build_export_filename(prefix):
     return os.path.join(EXPORTS_DIR, f"{prefix}_{timestamp}.txt")
 
 
-def export_last_results():
-    """
-    Export the most recent query results to a timestamped text file.
+# =========================
+# SUGGESTION ENGINE
+# =========================
 
-    Output includes:
-    - query used
-    - result numbering
-    - file names
-    - scores
-    - previews
+def suggest_actions():
     """
+    Suggest next actions based on system state.
+    """
+    if not LAST_RESULTS:
+        return
+
+    print("\nSuggestions:")
+
+    # Always suggest refining
+    print('- refine summary')
+    print('- refine <more keywords>')
+
+    # Suggest opening first result
+    print('- open 1')
+
+    # Suggest exporting
+    print('- export 1')
+
+    print()
+
+
+# =========================
+# EXPORT LOGIC
+# =========================
+
+def export_last_results():
     if not LAST_RESULTS or not LAST_QUERY:
         print("No results available to export.\n")
         return
@@ -104,14 +117,6 @@ def export_last_results():
 
 
 def export_result(index, mode="full"):
-    """
-    Export one selected result.
-
-    Modes:
-    - full: summary + full content
-    - summary: summary only
-    - raw: full content only
-    """
     if not LAST_RESULTS:
         print("No results available to export.\n")
         return
@@ -139,42 +144,35 @@ def export_result(index, mode="full"):
         f.write(f"Mode: {mode}\n")
         f.write("=" * 60 + "\n\n")
 
-        # Write summary when requested
         if mode in ["summary", "full"]:
             f.write("[Summary]\n")
             if summary_path and os.path.exists(summary_path):
-                with open(summary_path, "r", encoding="utf-8") as summary_file:
-                    f.write(summary_file.read() + "\n")
+                with open(summary_path, "r", encoding="utf-8") as s:
+                    f.write(s.read() + "\n")
             else:
                 f.write("No summary available.\n")
             f.write("\n" + "-" * 60 + "\n\n")
 
-        # Write raw/full content when requested
         if mode in ["raw", "full"]:
             f.write("[Full Content]\n")
             if text_path and os.path.exists(text_path):
-                with open(text_path, "r", encoding="utf-8") as text_file:
-                    f.write(text_file.read() + "\n")
+                with open(text_path, "r", encoding="utf-8") as t:
+                    f.write(t.read() + "\n")
             else:
                 f.write("File not found.\n")
 
     print(f"Selected result exported to: {export_path}\n")
 
 
-def run_query(query):
-    """
-    Executes a search query and stores results in session memory.
+# =========================
+# CORE ENGINE
+# =========================
 
-    Responsibilities:
-    - Calls search engine
-    - Saves query + results
-    - Displays preview of each result
-    """
+def run_query(query):
     global LAST_QUERY, LAST_RESULTS
 
     results = search_index(INDEX_PATH, query)
 
-    # Save query history
     QUERY_HISTORY.append(query)
     LAST_QUERY = query
     LAST_RESULTS = results
@@ -195,18 +193,11 @@ def run_query(query):
 
         print_divider()
 
+    # NEW: Suggest actions after results
+    suggest_actions()
+
 
 def open_result(index, mode="full"):
-    """
-    Opens a selected result based on its index.
-
-    Modes:
-    - full → show summary + full content
-    - summary → show only summary
-    - raw → show only full file content
-
-    Uses LAST_RESULTS from previous query.
-    """
     if not LAST_RESULTS:
         print("No results available.\n")
         return
@@ -222,22 +213,20 @@ def open_result(index, mode="full"):
 
     print_header(f"Opening Result #{index} ({mode})")
 
-    # Show summary if requested
     if mode in ["summary", "full"]:
         if summary_path and os.path.exists(summary_path):
             print("[Summary]")
-            with open(summary_path, "r", encoding="utf-8") as summary_file:
-                print(summary_file.read())
+            with open(summary_path, "r", encoding="utf-8") as s:
+                print(s.read())
             print_divider()
         else:
             print("No summary available.\n")
 
-    # Show raw content if requested
     if mode in ["raw", "full"]:
         if text_path and os.path.exists(text_path):
             print("[Full Content]")
-            with open(text_path, "r", encoding="utf-8") as text_file:
-                print(text_file.read())
+            with open(text_path, "r", encoding="utf-8") as t:
+                print(t.read())
         else:
             print("File not found.")
 
@@ -245,27 +234,17 @@ def open_result(index, mode="full"):
 
 
 def show_history():
-    """
-    Displays all previous queries from this session.
-    """
     if not QUERY_HISTORY:
         print("No query history yet.")
         return
 
     print("\nQuery History:")
-    for i, query in enumerate(QUERY_HISTORY, 1):
-        print(f"{i}. {query}")
+    for i, q in enumerate(QUERY_HISTORY, 1):
+        print(f"{i}. {q}")
     print()
 
 
 def refine_query(extra_words):
-    """
-    Extends the last query with additional words.
-
-    Example:
-    LAST_QUERY = "test"
-    refine summary → "test summary"
-    """
     global LAST_QUERY
 
     if not LAST_QUERY:
@@ -277,45 +256,38 @@ def refine_query(extra_words):
     run_query(refined)
 
 
-def interactive_mode():
-    """
-    Main loop for interactive CLI session.
+# =========================
+# INTERACTIVE LOOP
+# =========================
 
-    Handles:
-    - user input
-    - command parsing
-    - routing to appropriate functions
-    """
+def interactive_mode():
     print_header("PAIOS Interactive Mode")
 
     print("Commands:")
     print('- type a query')
-    print('- "history" -> show past queries')
-    print('- "again" -> repeat last query')
-    print('- "refine <words>" -> extend last query')
-    print('- "open <n>" -> open full result')
-    print('- "open summary <n>" -> summary only')
-    print('- "open raw <n>" -> raw content only')
-    print('- "export" -> save last result set to outputs/')
-    print('- "export <n>" -> export one full result')
-    print('- "export summary <n>" -> export summary only')
-    print('- "export raw <n>" -> export full content only')
-    print('- "exit" -> quit\n')
+    print('- "history"')
+    print('- "again"')
+    print('- "refine <words>"')
+    print('- "open <n>"')
+    print('- "open summary <n>"')
+    print('- "open raw <n>"')
+    print('- "export"')
+    print('- "export <n>"')
+    print('- "export summary <n>"')
+    print('- "export raw <n>"')
+    print('- "exit"\n')
 
     while True:
         query = input("PAIOS> ").strip()
 
-        # Exit command
         if query.lower() in ["exit", "quit"]:
             print("\nExiting PAIOS.")
             break
 
-        # Show history
         if query.lower() == "history":
             show_history()
             continue
 
-        # Repeat last query
         if query.lower() == "again":
             if LAST_QUERY:
                 run_query(LAST_QUERY)
@@ -323,77 +295,48 @@ def interactive_mode():
                 print("No previous query.\n")
             continue
 
-        # Export last results
         if query.lower() == "export":
             export_last_results()
             continue
 
-        # Export selected result
         if query.lower().startswith("export "):
             parts = query.split()
-
             try:
                 if len(parts) == 2:
                     export_result(int(parts[1]), "full")
                 elif len(parts) == 3:
                     mode = parts[1]
                     index = int(parts[2])
-
-                    if mode in ["summary", "raw"]:
-                        export_result(index, mode)
-                    else:
-                        print("Invalid export mode.\n")
-                else:
-                    print("Usage: export <n> | export summary <n> | export raw <n>\n")
-            except Exception:
-                print("Invalid export command format.\n")
-
+                    export_result(index, mode)
+            except:
+                print("Invalid export command.\n")
             continue
 
-        # Refine query
         if query.lower().startswith("refine "):
-            extra_words = query[7:].strip()
-            refine_query(extra_words)
+            refine_query(query[7:].strip())
             continue
 
-        # Open commands
         if query.lower().startswith("open "):
             parts = query.split()
-
             try:
                 if len(parts) == 2:
                     open_result(int(parts[1]), "full")
                 elif len(parts) == 3:
-                    mode = parts[1]
-                    index = int(parts[2])
-
-                    if mode in ["summary", "raw"]:
-                        open_result(index, mode)
-                    else:
-                        print("Invalid open mode.\n")
-                else:
-                    print("Usage: open <n> | open summary <n> | open raw <n>\n")
-            except Exception:
-                print("Invalid command format.\n")
-
+                    open_result(int(parts[2]), parts[1])
+            except:
+                print("Invalid open command.\n")
             continue
 
-        # Empty input
         if not query:
             print("Empty query.\n")
             continue
 
-        # Default: run query
         run_query(query)
 
 
 if __name__ == "__main__":
-    # If no arguments → interactive mode
     if len(sys.argv) == 1:
         interactive_mode()
     else:
         query = " ".join(sys.argv[1:])
-        if not query:
-            print('Usage: python3 cli.py "your query here"')
-        else:
-            run_query(query)
+        run_query(query)
