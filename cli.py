@@ -23,9 +23,9 @@ def print_divider():
 
 def parse_args():
     """
-    Parses CLI arguments for:
+    Parse CLI arguments for:
     --compact
-    --full (default)
+    --full
     --limit=N
     """
     args = sys.argv[1:]
@@ -41,7 +41,7 @@ def parse_args():
         elif arg.startswith("--limit="):
             try:
                 limit = int(arg.split("=")[1])
-            except:
+            except Exception:
                 pass
         else:
             query_parts.append(arg)
@@ -75,7 +75,6 @@ def run_query(query, mode="full", limit=None):
             print_divider()
             continue
 
-        # FULL MODE
         preview = r.get("preview")
         if preview:
             print("\n[Preview]")
@@ -94,10 +93,35 @@ def run_query(query, mode="full", limit=None):
         print_divider()
 
 
-if __name__ == "__main__":
-    query, mode, limit = parse_args()
+def interactive_mode():
+    """
+    Keep the CLI open for repeated queries until the user exits.
+    """
+    print_header("PAIOS Interactive Mode")
+    print('Type a query and press Enter. Type "exit" to quit.\n')
 
-    if not query:
-        print('Usage: python3 cli.py "your query here" [--compact] [--limit=N]')
+    while True:
+        query = input("PAIOS> ").strip()
+
+        if query.lower() in ["exit", "quit"]:
+            print("\nExiting PAIOS interactive mode.")
+            break
+
+        if not query:
+            print("Empty query. Try again.\n")
+            continue
+
+        run_query(query)
+
+
+if __name__ == "__main__":
+    # If no arguments are passed, enter interactive mode
+    if len(sys.argv) == 1:
+        interactive_mode()
     else:
-        run_query(query, mode, limit)
+        query, mode, limit = parse_args()
+
+        if not query:
+            print('Usage: python3 cli.py "your query here" [--compact] [--limit=N]')
+        else:
+            run_query(query, mode, limit)
