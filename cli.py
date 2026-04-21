@@ -13,7 +13,6 @@ INDEX_PATH = "memory/index/index.json"
 EXPORTS_DIR = "outputs"
 SESSION_FILE = "memory/session/session.json"
 
-
 # =========================
 # SESSION MEMORY
 # =========================
@@ -22,22 +21,15 @@ QUERY_HISTORY = []
 LAST_QUERY = None
 LAST_RESULTS = []
 
-
 # =========================
 # SESSION PERSISTENCE
 # =========================
 
 def ensure_session_dir():
-    """
-    Ensure session directory exists.
-    """
     os.makedirs(os.path.dirname(SESSION_FILE), exist_ok=True)
 
 
 def save_session():
-    """
-    Save session data to disk.
-    """
     ensure_session_dir()
 
     data = {
@@ -50,9 +42,6 @@ def save_session():
 
 
 def load_session():
-    """
-    Load session data if it exists.
-    """
     global QUERY_HISTORY, LAST_QUERY
 
     if not os.path.exists(SESSION_FILE):
@@ -88,41 +77,6 @@ def print_divider():
     print("\n" + "-" * 60 + "\n")
 
 
-def ensure_exports_dir():
-    os.makedirs(EXPORTS_DIR, exist_ok=True)
-
-
-def build_export_filename(prefix):
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return os.path.join(EXPORTS_DIR, f"{prefix}_{timestamp}.txt")
-
-
-# =========================
-# SUGGESTION ENGINE
-# =========================
-
-def suggest_actions():
-    print("\nSuggestions:")
-
-    if not LAST_RESULTS:
-        print('- try a broader query')
-        print('- try OR mode (example: test | summary)')
-        print('- try exact phrase ("...")')
-        print()
-        return
-
-    if len(LAST_RESULTS) == 1:
-        print('- open 1')
-        print('- export 1')
-        print()
-        return
-
-    print('- refine summary')
-    print('- open 1')
-    print('- export 1')
-    print()
-
-
 # =========================
 # CORE ENGINE
 # =========================
@@ -136,14 +90,12 @@ def run_query(query):
     LAST_QUERY = query
     LAST_RESULTS = results
 
-    # Persist session
     save_session()
 
     print_header(f"Query Results: {query}")
 
     if not results:
         print("No matches found.")
-        suggest_actions()
         return
 
     for idx, result in enumerate(results, 1):
@@ -155,8 +107,6 @@ def run_query(query):
             print(highlight(preview, query))
 
         print_divider()
-
-    suggest_actions()
 
 
 # =========================
@@ -174,6 +124,26 @@ def show_history():
     print()
 
 
+def run_history_query(index):
+    """
+    Run a query from history by index.
+
+    Example:
+    history:
+    1. test
+    2. test summary
+
+    again 2 → runs "test summary"
+    """
+    if index < 1 or index > len(QUERY_HISTORY):
+        print("Invalid history number.\n")
+        return
+
+    query = QUERY_HISTORY[index - 1]
+    print(f"\nRunning history query #{index}: {query}")
+    run_query(query)
+
+
 def refine_query(extra_words):
     global LAST_QUERY
 
@@ -186,7 +156,7 @@ def refine_query(extra_words):
     run_query(refined)
 
 
-def open_result(index, mode="full"):
+def open_result(index):
     if not LAST_RESULTS:
         print("No results available.\n")
         return
@@ -196,19 +166,18 @@ def open_result(index, mode="full"):
         return
 
     result = LAST_RESULTS[index - 1]
-
     text_path = result.get("text_path")
     summary_path = result.get("summary_path")
 
-    print_header(f"Opening Result #{index} ({mode})")
+    print_header(f"Opening Result #{index}")
 
-    if mode in ["summary", "full"] and summary_path and os.path.exists(summary_path):
+    if summary_path and os.path.exists(summary_path):
         print("[Summary]")
         with open(summary_path, "r", encoding="utf-8") as f:
             print(f.read())
         print_divider()
 
-    if mode in ["raw", "full"] and text_path and os.path.exists(text_path):
+    if text_path and os.path.exists(text_path):
         print("[Full Content]")
         with open(text_path, "r", encoding="utf-8") as f:
             print(f.read())
@@ -227,6 +196,7 @@ def interactive_mode():
     print('- query')
     print('- history')
     print('- again')
+    print('- again <n>  (run query from history)')
     print('- refine <words>')
     print('- open <n>')
     print('- exit\n')
@@ -240,6 +210,15 @@ def interactive_mode():
 
         if query.lower() == "history":
             show_history()
+            continue
+
+        # New: run specific history query
+        if query.lower().startswith("again "):
+            try:
+                index = int(query.split()[1])
+                run_history_query(index)
+            except:
+                print("Usage: again <history number>\n")
             continue
 
         if query.lower() == "again":
