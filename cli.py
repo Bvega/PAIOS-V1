@@ -275,6 +275,40 @@ def open_result(index):
     print_divider()
 
 
+def show_top_result():
+    """
+    Show a quick summary of the top-ranked result without opening full content.
+    Useful for fast inspection.
+    """
+    if not LAST_RESULTS:
+        print("No results available.\n")
+        return
+
+    top = LAST_RESULTS[0]
+    print_header("Top Result")
+    print(f"File  : {top.get('file_name')}")
+    print(f"Score : {top.get('score')}")
+
+    preview = top.get("preview")
+    if preview:
+        print("\n[Preview]")
+        print(preview)
+
+    print_divider()
+
+
+def open_top_result():
+    """
+    Open the first result from the last result set.
+    This is a shortcut for: open 1
+    """
+    if not LAST_RESULTS:
+        print("No results available.\n")
+        return
+
+    open_result(1)
+
+
 # =========================
 # INTERACTIVE LOOP
 # =========================
@@ -292,6 +326,8 @@ def interactive_mode():
     print('- context')
     print('- undo')
     print('- reset')
+    print('- top')
+    print('- open top')
     print('- open <n>')
     print('- exit\n')
 
@@ -317,6 +353,14 @@ def interactive_mode():
         if query.lower() == "reset":
             reset_context()
             print("Context cleared.\n")
+            continue
+
+        if query.lower() == "top":
+            show_top_result()
+            continue
+
+        if query.lower() == "open top":
+            open_top_result()
             continue
 
         if query.lower().startswith("again "):
