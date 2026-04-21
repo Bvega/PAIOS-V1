@@ -10,7 +10,6 @@ from scripts.search import search_index
 # =========================
 
 INDEX_PATH = "memory/index/index.json"
-EXPORTS_DIR = "outputs"
 SESSION_FILE = "memory/session/session.json"
 
 # =========================
@@ -20,6 +19,10 @@ SESSION_FILE = "memory/session/session.json"
 QUERY_HISTORY = []
 LAST_QUERY = None
 LAST_RESULTS = []
+
+# NEW: Context chain (tracks progressive refinement)
+QUERY_CONTEXT = []
+
 
 # =========================
 # SESSION PERSISTENCE
@@ -34,7 +37,8 @@ def save_session():
 
     data = {
         "history": QUERY_HISTORY,
-        "last_query": LAST_QUERY
+        "last_query": LAST_QUERY,
+        "context": QUERY_CONTEXT
     }
 
     with open(SESSION_FILE, "w", encoding="utf-8") as f:
@@ -42,7 +46,7 @@ def save_session():
 
 
 def load_session():
-    global QUERY_HISTORY, LAST_QUERY
+    global QUERY_HISTORY, LAST_QUERY, QUERY_CONTEXT
 
     if not os.path.exists(SESSION_FILE):
         return
@@ -53,6 +57,7 @@ def load_session():
 
             QUERY_HISTORY = data.get("history", [])
             LAST_QUERY = data.get("last_query", None)
+            QUERY_CONTEXT = data.get("context", [])
 
     except Exception:
         print("Warning: Failed to load session data.")
@@ -78,11 +83,45 @@ def print_divider():
 
 
 # =========================
+# CONTEXT HANDLING
+# =========================
+
+def build_context_query():
+    """
+    Combine all context terms into one query string.
+
+    Example:
+    ["test", "summary", "errors"]
+    → "test summary errors"
+    """
+    return " ".join(QUERY_CONTEXT)
+
+
+def reset_context(new_query):
+    """
+    Reset context chain with a new base query.
+    """
+    global QUERY_CONTEXT
+    QUERY_CONTEXT = [new_query]
+
+
+def extend_context(extra_words):
+    """
+    Extend existing context chain.
+    """
+    global QUERY_CONTEXT
+    QUERY_CONTEXT.append(extra_words)
+
+
+# =========================
 # CORE ENGINE
 # =========================
 
-def run_query(query):
+def run_query(query, use_context=True):
     global LAST_QUERY, LAST_RESULTS
+
+    if use_context and QUERY_CONTEXT:
+        query = build_context_query()
 
     results = search_index(INDEX_PATH, query)
 
@@ -125,35 +164,31 @@ def show_history():
 
 
 def run_history_query(index):
-    """
-    Run a query from history by index.
-
-    Example:
-    history:
-    1. test
-    2. test summary
-
-    again 2 → runs "test summary"
-    """
     if index < 1 or index > len(QUERY_HISTORY):
         print("Invalid history number.\n")
         return
 
     query = QUERY_HISTORY[index - 1]
     print(f"\nRunning history query #{index}: {query}")
-    run_query(query)
+
+    reset_context(query)
+    run_query(query, use_context=False)
 
 
 def refine_query(extra_words):
-    global LAST_QUERY
-
-    if not LAST_QUERY:
-        print("No previous query.\n")
+    """
+    Extend context chain instead of rebuilding query manually.
+    """
+    if not QUERY_CONTEXT:
+        print("No base query. Start with a query first.\n")
         return
 
-    refined = f"{LAST_QUERY} {extra_words}".strip()
-    print(f"\nRefined query: {refined}")
-    run_query(refined)
+    extend_context(extra_words)
+
+    refined_query = build_context_query()
+    print(f"\nRefined (context): {refined_query}")
+
+    run_query(refined_query, use_context=False)
 
 
 def open_result(index):
@@ -166,6 +201,7 @@ def open_result(index):
         return
 
     result = LAST_RESULTS[index - 1]
+
     text_path = result.get("text_path")
     summary_path = result.get("summary_path")
 
@@ -196,7 +232,7 @@ def interactive_mode():
     print('- query')
     print('- history')
     print('- again')
-    print('- again <n>  (run query from history)')
+    print('- again <n>')
     print('- refine <words>')
     print('- open <n>')
     print('- exit\n')
@@ -212,13 +248,11 @@ def interactive_mode():
             show_history()
             continue
 
-        # New: run specific history query
         if query.lower().startswith("again "):
             try:
-                index = int(query.split()[1])
-                run_history_query(index)
+                run_history_query(int(query.split()[1]))
             except:
-                print("Usage: again <history number>\n")
+                print("Usage: again <n>\n")
             continue
 
         if query.lower() == "again":
@@ -243,7 +277,9 @@ def interactive_mode():
             print("Empty query.\n")
             continue
 
-        run_query(query)
+        # NEW: reset context when a fresh query is entered
+        reset_context(query)
+        run_query(query, use_context=False)
 
 
 # =========================
@@ -257,4 +293,5 @@ if __name__ == "__main__":
         interactive_mode()
     else:
         query = " ".join(sys.argv[1:])
-        run_query(query)
+        reset_context(query)
+        run_query(query, use_context=False)
