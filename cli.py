@@ -5,6 +5,10 @@ from scripts.search import search_index
 
 INDEX_PATH = "memory/index/index.json"
 
+# --- Session memory ---
+QUERY_HISTORY = []
+LAST_QUERY = None
+
 
 def highlight(text, keyword):
     pattern = re.compile(re.escape(keyword), re.IGNORECASE)
@@ -22,12 +26,6 @@ def print_divider():
 
 
 def parse_args():
-    """
-    Parse CLI arguments for:
-    --compact
-    --full
-    --limit=N
-    """
     args = sys.argv[1:]
     query_parts = []
     mode = "full"
@@ -51,7 +49,13 @@ def parse_args():
 
 
 def run_query(query, mode="full", limit=None):
+    global LAST_QUERY
+
     results = search_index(INDEX_PATH, query)
+
+    # Save query to session memory
+    QUERY_HISTORY.append(query)
+    LAST_QUERY = query
 
     print_header(f"Query Results: {query}")
 
@@ -93,29 +97,81 @@ def run_query(query, mode="full", limit=None):
         print_divider()
 
 
+def show_history():
+    if not QUERY_HISTORY:
+        print("No query history yet.")
+        return
+
+    print("\nQuery History:")
+    for i, q in enumerate(QUERY_HISTORY, 1):
+        print(f"{i}. {q}")
+    print()
+
+
+def refine_query(extra_words):
+    """
+    Combine the last query with new refinement terms.
+    Example:
+    last query = "test"
+    refine summary
+    new query = "test summary"
+    """
+    global LAST_QUERY
+
+    if not LAST_QUERY:
+        print("No previous query to refine.\n")
+        return
+
+    refined = f"{LAST_QUERY} {extra_words}".strip()
+    print(f"\nRefined query: {refined}")
+    run_query(refined)
+
+
 def interactive_mode():
-    """
-    Keep the CLI open for repeated queries until the user exits.
-    """
+    global LAST_QUERY
+
     print_header("PAIOS Interactive Mode")
-    print('Type a query and press Enter. Type "exit" to quit.\n')
+    print("Commands:")
+    print('- type a query')
+    print('- "history" -> show past queries')
+    print('- "again" -> repeat last query')
+    print('- "refine <extra words>" -> extend last query')
+    print('- "exit" -> quit\n')
 
     while True:
         query = input("PAIOS> ").strip()
 
         if query.lower() in ["exit", "quit"]:
-            print("\nExiting PAIOS interactive mode.")
+            print("\nExiting PAIOS.")
             break
 
+        if query.lower() == "history":
+            show_history()
+            continue
+
+        if query.lower() == "again":
+            if LAST_QUERY:
+                run_query(LAST_QUERY)
+            else:
+                print("No previous query.\n")
+            continue
+
+        if query.lower().startswith("refine "):
+            extra_words = query[7:].strip()
+            if extra_words:
+                refine_query(extra_words)
+            else:
+                print("Usage: refine <extra words>\n")
+            continue
+
         if not query:
-            print("Empty query. Try again.\n")
+            print("Empty query.\n")
             continue
 
         run_query(query)
 
 
 if __name__ == "__main__":
-    # If no arguments are passed, enter interactive mode
     if len(sys.argv) == 1:
         interactive_mode()
     else:
