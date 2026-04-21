@@ -1,10 +1,14 @@
 import sys
 import os
 import re
+from datetime import datetime
 from scripts.search import search_index
 
 # Path to the generated index file
 INDEX_PATH = "memory/index/index.json"
+
+# Directory where exported query results will be saved
+EXPORTS_DIR = "outputs"
 
 # --- Session memory ---
 # Stores all queries made during the session
@@ -13,7 +17,7 @@ QUERY_HISTORY = []
 # Stores the last executed query
 LAST_QUERY = None
 
-# Stores last search results (used for open commands)
+# Stores last search results (used for open/export commands)
 LAST_RESULTS = []
 
 
@@ -44,6 +48,54 @@ def print_divider():
     Improves readability in CLI output.
     """
     print("\n" + "-" * 60 + "\n")
+
+
+def ensure_exports_dir():
+    """
+    Ensure the exports directory exists before saving files.
+    """
+    os.makedirs(EXPORTS_DIR, exist_ok=True)
+
+
+def export_last_results():
+    """
+    Export the most recent query results to a timestamped text file.
+
+    Output includes:
+    - query used
+    - result numbering
+    - file names
+    - scores
+    - previews
+    """
+    if not LAST_RESULTS or not LAST_QUERY:
+        print("No results available to export.\n")
+        return
+
+    ensure_exports_dir()
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"query_export_{timestamp}.txt"
+    export_path = os.path.join(EXPORTS_DIR, filename)
+
+    with open(export_path, "w", encoding="utf-8") as f:
+        f.write(f"PAIOS Query Export\n")
+        f.write(f"Query: {LAST_QUERY}\n")
+        f.write("=" * 60 + "\n\n")
+
+        for idx, result in enumerate(LAST_RESULTS, 1):
+            f.write(f"Result #{idx}\n")
+            f.write(f"File  : {result.get('file_name')}\n")
+            f.write(f"Score : {result.get('score')}\n")
+
+            preview = result.get("preview")
+            if preview:
+                f.write("\n[Preview]\n")
+                f.write(preview + "\n")
+
+            f.write("\n" + "-" * 60 + "\n\n")
+
+    print(f"Results exported to: {export_path}\n")
 
 
 def run_query(query):
@@ -181,6 +233,7 @@ def interactive_mode():
     print('- "open <n>" -> open full result')
     print('- "open summary <n>" -> summary only')
     print('- "open raw <n>" -> raw content only')
+    print('- "export" -> save last result set to outputs/')
     print('- "exit" -> quit\n')
 
     while True:
@@ -202,6 +255,11 @@ def interactive_mode():
                 run_query(LAST_QUERY)
             else:
                 print("No previous query.\n")
+            continue
+
+        # Export last results
+        if query.lower() == "export":
+            export_last_results()
             continue
 
         # Refine query
