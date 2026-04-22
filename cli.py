@@ -1,3 +1,4 @@
+
 import sys
 import os
 import re
@@ -18,9 +19,10 @@ SESSION_FILE = "memory/session/session.json"
 QUERY_HISTORY = []
 LAST_QUERY = None
 LAST_RESULTS = []
-
-# Tracks progressive refinement context
 QUERY_CONTEXT = []
+
+# New: output mode (human vs json)
+OUTPUT_MODE = "human"
 
 
 # =========================
@@ -28,12 +30,10 @@ QUERY_CONTEXT = []
 # =========================
 
 def ensure_session_dir():
-    """Ensure the session folder exists."""
     os.makedirs(os.path.dirname(SESSION_FILE), exist_ok=True)
 
 
 def save_session():
-    """Save session data to disk."""
     ensure_session_dir()
 
     data = {
@@ -47,7 +47,6 @@ def save_session():
 
 
 def load_session():
-    """Load session data from disk if available."""
     global QUERY_HISTORY, LAST_QUERY, QUERY_CONTEXT
 
     if not os.path.exists(SESSION_FILE):
@@ -70,20 +69,17 @@ def load_session():
 # =========================
 
 def highlight(text, keyword):
-    """Highlight keyword occurrences in a case-insensitive way."""
     pattern = re.compile(re.escape(keyword), re.IGNORECASE)
     return pattern.sub(lambda m: f"[{m.group(0).upper()}]", text)
 
 
 def print_header(title):
-    """Print a formatted title block."""
     print("\n" + "=" * 60)
     print(title.upper())
     print("=" * 60 + "\n")
 
 
 def print_divider():
-    """Print a divider line."""
     print("\n" + "-" * 60 + "\n")
 
 
@@ -92,23 +88,10 @@ def print_divider():
 # =========================
 
 def build_context_query():
-    """
-    Combine all context items into one query string.
-
-    Example:
-    ["test", "summary", "errors"]
-    -> "test summary errors"
-    """
     return " ".join(QUERY_CONTEXT)
 
 
 def reset_context(new_query=None):
-    """
-    Reset context.
-
-    - If new_query is provided, it becomes the new base context.
-    - If not provided, context becomes empty.
-    """
     global QUERY_CONTEXT
 
     if new_query:
@@ -120,45 +103,34 @@ def reset_context(new_query=None):
 
 
 def extend_context(extra_words):
-    """Append refinement terms to the current context chain."""
     global QUERY_CONTEXT
     QUERY_CONTEXT.append(extra_words)
     save_session()
 
 
-def show_context():
-    """Display the current context chain and combined query."""
-    if not QUERY_CONTEXT:
-        print("Context is empty.\n")
-        return
+# =========================
+# LLM OUTPUT FORMAT
+# =========================
 
-    print("\nCurrent context chain:")
-    for i, item in enumerate(QUERY_CONTEXT, 1):
-        print(f"{i}. {item}")
-
-    print(f"\nCombined query: {build_context_query()}\n")
-
-
-def undo_context():
+def format_results_json(query, results):
     """
-    Remove the most recent context item.
-
-    Prevents removing the final base query item unless there is more than one item.
+    Return structured JSON output for LLM or API usage.
     """
-    global QUERY_CONTEXT
+    formatted = {
+        "query": query,
+        "results": []
+    }
 
-    if not QUERY_CONTEXT:
-        print("Context is already empty.\n")
-        return
+    for r in results:
+        formatted["results"].append({
+            "file": r.get("file_name"),
+            "score": r.get("score"),
+            "preview": r.get("preview"),
+            "summary_path": r.get("summary_path"),
+            "text_path": r.get("text_path")
+        })
 
-    if len(QUERY_CONTEXT) == 1:
-        print("Cannot undo base query. Use 'reset' to clear context.\n")
-        return
-
-    removed = QUERY_CONTEXT.pop()
-    save_session()
-    print(f"Removed last context item: {removed}")
-    print(f"Current context: {build_context_query()}\n")
+    return formatted
 
 
 # =========================
@@ -166,11 +138,6 @@ def undo_context():
 # =========================
 
 def run_query(query, use_context=True):
-    """
-    Run a query against the index.
-
-    If use_context=True and context exists, search uses the full context chain.
-    """
     global LAST_QUERY, LAST_RESULTS
 
     if use_context and QUERY_CONTEXT:
@@ -184,6 +151,12 @@ def run_query(query, use_context=True):
 
     save_session()
 
+    # JSON MODE (for AI integration)
+    if OUTPUT_MODE == "json":
+        print(json.dumps(format_results_json(query, results), indent=2))
+        return
+
+    # HUMAN MODE
     print_header(f"Query Results: {query}")
 
     if not results:
@@ -205,86 +178,24 @@ def run_query(query, use_context=True):
 # COMMANDS
 # =========================
 
-def show_history():
-    """Display stored query history."""
-    if not QUERY_HISTORY:
-        print("No query history yet.")
+def set_output_mode(mode):
+    global OUTPUT_MODE
+
+    if mode not in ["human", "json"]:
+        print("Invalid mode. Use: mode human | mode json\n")
         return
 
-    print("\nQuery History:")
-    for i, q in enumerate(QUERY_HISTORY, 1):
-        print(f"{i}. {q}")
-    print()
-
-
-def run_history_query(index):
-    """Run a past query from history by number."""
-    if index < 1 or index > len(QUERY_HISTORY):
-        print("Invalid history number.\n")
-        return
-
-    query = QUERY_HISTORY[index - 1]
-    print(f"\nRunning history query #{index}: {query}")
-
-    reset_context(query)
-    run_query(query, use_context=False)
-
-
-def refine_query(extra_words):
-    """Extend the current context chain and rerun query."""
-    if not QUERY_CONTEXT:
-        print("No base query. Start with a query first.\n")
-        return
-
-    extend_context(extra_words)
-
-    refined_query = build_context_query()
-    print(f"\nRefined (context): {refined_query}")
-
-    run_query(refined_query, use_context=False)
-
-
-def open_result(index):
-    """Open a selected result and show summary + full content."""
-    if not LAST_RESULTS:
-        print("No results available.\n")
-        return
-
-    if index < 1 or index > len(LAST_RESULTS):
-        print("Invalid result number.\n")
-        return
-
-    result = LAST_RESULTS[index - 1]
-
-    text_path = result.get("text_path")
-    summary_path = result.get("summary_path")
-
-    print_header(f"Opening Result #{index}")
-
-    if summary_path and os.path.exists(summary_path):
-        print("[Summary]")
-        with open(summary_path, "r", encoding="utf-8") as f:
-            print(f.read())
-        print_divider()
-
-    if text_path and os.path.exists(text_path):
-        print("[Full Content]")
-        with open(text_path, "r", encoding="utf-8") as f:
-            print(f.read())
-
-    print_divider()
+    OUTPUT_MODE = mode
+    print(f"Output mode set to: {mode}\n")
 
 
 def show_top_result():
-    """
-    Show a quick summary of the top-ranked result without opening full content.
-    Useful for fast inspection.
-    """
     if not LAST_RESULTS:
         print("No results available.\n")
         return
 
     top = LAST_RESULTS[0]
+
     print_header("Top Result")
     print(f"File  : {top.get('file_name')}")
     print(f"Score : {top.get('score')}")
@@ -297,38 +208,19 @@ def show_top_result():
     print_divider()
 
 
-def open_top_result():
-    """
-    Open the first result from the last result set.
-    This is a shortcut for: open 1
-    """
-    if not LAST_RESULTS:
-        print("No results available.\n")
-        return
-
-    open_result(1)
-
-
 # =========================
 # INTERACTIVE LOOP
 # =========================
 
 def interactive_mode():
-    """Main interactive loop for PAIOS."""
     print_header("PAIOS Interactive Mode")
 
     print("Commands:")
     print('- query')
-    print('- history')
-    print('- again')
-    print('- again <n>')
     print('- refine <words>')
-    print('- context')
-    print('- undo')
-    print('- reset')
     print('- top')
-    print('- open top')
-    print('- open <n>')
+    print('- mode human')
+    print('- mode json')
     print('- exit\n')
 
     while True:
@@ -338,61 +230,23 @@ def interactive_mode():
             print("\nExiting PAIOS.")
             break
 
-        if query.lower() == "history":
-            show_history()
-            continue
-
-        if query.lower() == "context":
-            show_context()
-            continue
-
-        if query.lower() == "undo":
-            undo_context()
-            continue
-
-        if query.lower() == "reset":
-            reset_context()
-            print("Context cleared.\n")
-            continue
-
         if query.lower() == "top":
             show_top_result()
             continue
 
-        if query.lower() == "open top":
-            open_top_result()
-            continue
-
-        if query.lower().startswith("again "):
-            try:
-                run_history_query(int(query.split()[1]))
-            except Exception:
-                print("Usage: again <n>\n")
-            continue
-
-        if query.lower() == "again":
-            if LAST_QUERY:
-                run_query(LAST_QUERY)
-            else:
-                print("No previous query.\n")
+        if query.lower().startswith("mode "):
+            set_output_mode(query.split()[1])
             continue
 
         if query.lower().startswith("refine "):
-            refine_query(query[7:].strip())
-            continue
-
-        if query.lower().startswith("open "):
-            try:
-                open_result(int(query.split()[1]))
-            except Exception:
-                print("Invalid open command.\n")
+            extend_context(query[7:].strip())
+            run_query(build_context_query(), use_context=False)
             continue
 
         if not query:
             print("Empty query.\n")
             continue
 
-        # Fresh query resets context chain
         reset_context(query)
         run_query(query, use_context=False)
 
