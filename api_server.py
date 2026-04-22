@@ -94,7 +94,7 @@ class PAIOSRequestHandler(BaseHTTPRequestHandler):
     - /health
     - /search?q=...&limit=...
     - /top?q=...
-    - /open?q=...
+    - /open?q=...&mode=full|summary|raw
     """
 
     def do_GET(self):
@@ -186,13 +186,18 @@ class PAIOSRequestHandler(BaseHTTPRequestHandler):
 
         # -------------------------
         # OPEN BEST RESULT
-        # /open?q=test
+        # /open?q=test&mode=full|summary|raw
         # -------------------------
         if path == "/open":
             query = get_query_param(params, "q")
+            mode = get_query_param(params, "mode", default="full").lower()
 
             if not query:
                 error_response(self, 'Missing query parameter. Use /open?q=your+query')
+                return
+
+            if mode not in ["full", "summary", "raw"]:
+                error_response(self, "Mode must be one of: full, summary, raw.")
                 return
 
             results = search_index(INDEX_PATH, query)
@@ -218,9 +223,14 @@ class PAIOSRequestHandler(BaseHTTPRequestHandler):
                 "file": best_result.get("file_name"),
                 "score": best_result.get("score"),
                 "preview": best_result.get("preview"),
-                "summary": summary_content,
-                "content": full_content,
+                "mode": mode,
             }
+
+            if mode in ["full", "summary"]:
+                payload["summary"] = summary_content
+
+            if mode in ["full", "raw"]:
+                payload["content"] = full_content
 
             json_response(self, payload)
             return
@@ -230,7 +240,7 @@ class PAIOSRequestHandler(BaseHTTPRequestHandler):
         # -------------------------
         error_response(
             self,
-            "Not found. Available endpoints: /health, /search?q=..., /top?q=..., /open?q=...",
+            "Not found. Available endpoints: /health, /search?q=..., /top?q=..., /open?q=...&mode=...",
             status=404,
         )
 
@@ -256,7 +266,7 @@ def run_server():
     print("  /health")
     print("  /search?q=...&limit=...")
     print("  /top?q=...")
-    print("  /open?q=...")
+    print("  /open?q=...&mode=full|summary|raw")
 
     server.serve_forever()
 
