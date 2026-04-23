@@ -25,7 +25,7 @@ def read_file(path):
 def safe_int(value, default=None):
     try:
         return int(value)
-    except (TypeError, ValueError):
+    except:
         return default
 
 
@@ -43,18 +43,27 @@ def json_response(handler, payload, status=200):
     body = json.dumps(payload, indent=2).encode("utf-8")
 
     handler.send_response(status)
-    handler.send_header("Content-Type", "application/json; charset=utf-8")
+    handler.send_header("Content-Type", "application/json")
     handler.send_header("Content-Length", str(len(body)))
     handler.end_headers()
     handler.wfile.write(body)
 
 
-def error_response(handler, message, status=400):
-    json_response(handler, {"error": message}, status)
+def error(handler, msg, status=400):
+    json_response(handler, {"error": msg}, status)
 
 
 def get_param(params, name, default=""):
     return params.get(name, [default])[0].strip()
+
+
+def build_query(base, refine):
+    """
+    Combine base query + refine terms cleanly.
+    """
+    if not refine:
+        return base
+    return f"{base} {refine}".strip()
 
 
 # =========================
@@ -72,42 +81,42 @@ class Handler(BaseHTTPRequestHandler):
         # HEALTH
         # -------------------------
         if path == "/health":
-            json_response(self, {
-                "status": "ok",
-                "service": "PAIOS API"
-            })
+            json_response(self, {"status": "ok"})
             return
 
         # -------------------------
         # SEARCH
-        # /search?q=test&limit=2&min_score=5
+        # /search?q=test&refine=summary&limit=2&min_score=5
         # -------------------------
         if path == "/search":
-            query = get_param(params, "q")
+            q = get_param(params, "q")
+            refine = get_param(params, "refine")
             limit = safe_int(get_param(params, "limit"), None)
             min_score = safe_int(get_param(params, "min_score"), None)
 
-            if not query:
-                error_response(self, "Missing ?q=")
+            if not q:
+                error(self, "Missing ?q=")
                 return
 
-            results = search_index(INDEX_PATH, query)
+            full_query = build_query(q, refine)
 
-            # FILTER BY SCORE
+            results = search_index(INDEX_PATH, full_query)
+
+            # FILTER
             if min_score is not None:
                 results = [r for r in results if r.get("score", 0) >= min_score]
 
-            # APPLY LIMIT
             if limit is not None:
                 if limit < 1:
-                    error_response(self, "Limit must be >= 1")
+                    error(self, "limit must be >= 1")
                     return
                 results = results[:limit]
 
             json_response(self, {
-                "query": query,
+                "query": q,
+                "refine": refine,
+                "full_query": full_query,
                 "count": len(results),
-                "min_score": min_score,
                 "results": [format_result(r) for r in results]
             })
             return
@@ -116,20 +125,25 @@ class Handler(BaseHTTPRequestHandler):
         # TOP
         # -------------------------
         if path == "/top":
-            query = get_param(params, "q")
+            q = get_param(params, "q")
+            refine = get_param(params, "refine")
 
-            if not query:
-                error_response(self, "Missing ?q=")
+            if not q:
+                error(self, "Missing ?q=")
                 return
 
-            results = search_index(INDEX_PATH, query)
+            full_query = build_query(q, refine)
+
+            results = search_index(INDEX_PATH, full_query)
 
             if not results:
-                json_response(self, {"query": query, "result": None})
+                json_response(self, {"query": full_query, "result": None})
                 return
 
             json_response(self, {
-                "query": query,
+                "query": q,
+                "refine": refine,
+                "full_query": full_query,
                 "result": format_result(results[0])
             })
             return
@@ -138,21 +152,24 @@ class Handler(BaseHTTPRequestHandler):
         # OPEN
         # -------------------------
         if path == "/open":
-            query = get_param(params, "q")
+            q = get_param(params, "q")
+            refine = get_param(params, "refine")
             mode = get_param(params, "mode", "full").lower()
 
-            if not query:
-                error_response(self, "Missing ?q=")
+            if not q:
+                error(self, "Missing ?q=")
                 return
 
             if mode not in ["full", "summary", "raw"]:
-                error_response(self, "mode must be full|summary|raw")
+                error(self, "mode must be full|summary|raw")
                 return
 
-            results = search_index(INDEX_PATH, query)
+            full_query = build_query(q, refine)
+
+            results = search_index(INDEX_PATH, full_query)
 
             if not results:
-                json_response(self, {"query": query, "result": None})
+                json_response(self, {"query": full_query, "result": None})
                 return
 
             best = results[0]
@@ -161,10 +178,12 @@ class Handler(BaseHTTPRequestHandler):
             content = read_file(best.get("text_path"))
 
             payload = {
-                "query": query,
+                "query": q,
+                "refine": refine,
+                "full_query": full_query,
+                "mode": mode,
                 "file": best.get("file_name"),
                 "score": best.get("score"),
-                "mode": mode
             }
 
             if mode in ["full", "summary"]:
@@ -179,7 +198,7 @@ class Handler(BaseHTTPRequestHandler):
         # -------------------------
         # FALLBACK
         # -------------------------
-        error_response(self, "Invalid endpoint", 404)
+        error(self, "Invalid endpoint", 404)
 
     def log_message(self, format, *args):
         return
@@ -195,9 +214,9 @@ def run():
     print(f"PAIOS API running at http://{HOST}:{PORT}")
     print("Endpoints:")
     print("  /health")
-    print("  /search?q=...&limit=...&min_score=...")
-    print("  /top?q=...")
-    print("  /open?q=...&mode=full|summary|raw")
+    print("  /search?q=...&refine=...&limit=...&min_score=...")
+    print("  /top?q=...&refine=...")
+    print("  /open?q=...&refine=...&mode=full|summary|raw")
 
     server.serve_forever()
 
