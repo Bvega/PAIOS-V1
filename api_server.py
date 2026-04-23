@@ -5,14 +5,9 @@ from urllib.parse import urlparse, parse_qs
 
 from scripts.search import search_index
 
-# =========================
-# SERVER CONFIG
-# =========================
-
 HOST = "127.0.0.1"
 PORT = 8000
 
-# Main index used by the API server
 INDEX_PATH = "memory/index/index.json"
 
 
@@ -21,44 +16,30 @@ INDEX_PATH = "memory/index/index.json"
 # =========================
 
 def read_file(path):
-    """
-    Read and return file content if the path exists.
-    Return None when the file is missing.
-    """
     if path and os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as file:
-            return file.read()
+        with open(path, "r", encoding="utf-8") as f:
+            return f.read()
     return None
 
 
 def safe_int(value, default=None):
-    """
-    Safely convert a value to int.
-    Return default if conversion fails.
-    """
     try:
         return int(value)
     except (TypeError, ValueError):
         return default
 
 
-def format_result(result):
-    """
-    Normalize one search result into a clean JSON-friendly shape.
-    """
+def format_result(r):
     return {
-        "file": result.get("file_name"),
-        "score": result.get("score"),
-        "preview": result.get("preview"),
-        "summary_path": result.get("summary_path"),
-        "text_path": result.get("text_path"),
+        "file": r.get("file_name"),
+        "score": r.get("score"),
+        "preview": r.get("preview"),
+        "summary_path": r.get("summary_path"),
+        "text_path": r.get("text_path"),
     }
 
 
 def json_response(handler, payload, status=200):
-    """
-    Send a JSON response with a consistent content type and status code.
-    """
     body = json.dumps(payload, indent=2).encode("utf-8")
 
     handler.send_response(status)
@@ -69,202 +50,152 @@ def json_response(handler, payload, status=200):
 
 
 def error_response(handler, message, status=400):
-    """
-    Send a standardized JSON error response.
-    """
-    json_response(handler, {"error": message}, status=status)
+    json_response(handler, {"error": message}, status)
 
 
-def get_query_param(params, name, default=""):
-    """
-    Get a single query-string value from parse_qs output.
-    """
+def get_param(params, name, default=""):
     return params.get(name, [default])[0].strip()
 
 
 # =========================
-# REQUEST HANDLER
+# HANDLER
 # =========================
 
-class PAIOSRequestHandler(BaseHTTPRequestHandler):
-    """
-    Local HTTP API for PAIOS.
-
-    Supported endpoints:
-    - /health
-    - /search?q=...&limit=...
-    - /top?q=...
-    - /open?q=...&mode=full|summary|raw
-    """
+class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
-        """
-        Route incoming GET requests to the proper endpoint.
-        """
-        parsed_url = urlparse(self.path)
-        path = parsed_url.path
-        params = parse_qs(parsed_url.query)
+        parsed = urlparse(self.path)
+        path = parsed.path
+        params = parse_qs(parsed.query)
 
         # -------------------------
-        # HEALTH CHECK
+        # HEALTH
         # -------------------------
         if path == "/health":
-            json_response(
-                self,
-                {
-                    "status": "ok",
-                    "service": "PAIOS API",
-                    "host": HOST,
-                    "port": PORT,
-                },
-            )
+            json_response(self, {
+                "status": "ok",
+                "service": "PAIOS API"
+            })
             return
 
         # -------------------------
         # SEARCH
-        # /search?q=test&limit=2
+        # /search?q=test&limit=2&min_score=5
         # -------------------------
         if path == "/search":
-            query = get_query_param(params, "q")
-            limit = safe_int(get_query_param(params, "limit"), default=None)
+            query = get_param(params, "q")
+            limit = safe_int(get_param(params, "limit"), None)
+            min_score = safe_int(get_param(params, "min_score"), None)
 
             if not query:
-                error_response(self, 'Missing query parameter. Use /search?q=your+query')
-                return
-
-            if limit is not None and limit < 1:
-                error_response(self, "Limit must be 1 or greater.")
+                error_response(self, "Missing ?q=")
                 return
 
             results = search_index(INDEX_PATH, query)
 
+            # FILTER BY SCORE
+            if min_score is not None:
+                results = [r for r in results if r.get("score", 0) >= min_score]
+
+            # APPLY LIMIT
             if limit is not None:
+                if limit < 1:
+                    error_response(self, "Limit must be >= 1")
+                    return
                 results = results[:limit]
 
-            payload = {
+            json_response(self, {
                 "query": query,
                 "count": len(results),
-                "results": [format_result(result) for result in results],
-            }
-            json_response(self, payload)
+                "min_score": min_score,
+                "results": [format_result(r) for r in results]
+            })
             return
 
         # -------------------------
-        # TOP RESULT
-        # /top?q=test
+        # TOP
         # -------------------------
         if path == "/top":
-            query = get_query_param(params, "q")
+            query = get_param(params, "q")
 
             if not query:
-                error_response(self, 'Missing query parameter. Use /top?q=your+query')
+                error_response(self, "Missing ?q=")
                 return
 
             results = search_index(INDEX_PATH, query)
 
             if not results:
-                json_response(
-                    self,
-                    {
-                        "query": query,
-                        "result": None,
-                        "message": "No matches found.",
-                    },
-                )
+                json_response(self, {"query": query, "result": None})
                 return
 
-            top_result = format_result(results[0])
-
-            json_response(
-                self,
-                {
-                    "query": query,
-                    "result": top_result,
-                },
-            )
+            json_response(self, {
+                "query": query,
+                "result": format_result(results[0])
+            })
             return
 
         # -------------------------
-        # OPEN BEST RESULT
-        # /open?q=test&mode=full|summary|raw
+        # OPEN
         # -------------------------
         if path == "/open":
-            query = get_query_param(params, "q")
-            mode = get_query_param(params, "mode", default="full").lower()
+            query = get_param(params, "q")
+            mode = get_param(params, "mode", "full").lower()
 
             if not query:
-                error_response(self, 'Missing query parameter. Use /open?q=your+query')
+                error_response(self, "Missing ?q=")
                 return
 
             if mode not in ["full", "summary", "raw"]:
-                error_response(self, "Mode must be one of: full, summary, raw.")
+                error_response(self, "mode must be full|summary|raw")
                 return
 
             results = search_index(INDEX_PATH, query)
 
             if not results:
-                json_response(
-                    self,
-                    {
-                        "query": query,
-                        "result": None,
-                        "message": "No matches found.",
-                    },
-                )
+                json_response(self, {"query": query, "result": None})
                 return
 
-            best_result = results[0]
+            best = results[0]
 
-            summary_content = read_file(best_result.get("summary_path"))
-            full_content = read_file(best_result.get("text_path"))
+            summary = read_file(best.get("summary_path"))
+            content = read_file(best.get("text_path"))
 
             payload = {
                 "query": query,
-                "file": best_result.get("file_name"),
-                "score": best_result.get("score"),
-                "preview": best_result.get("preview"),
-                "mode": mode,
+                "file": best.get("file_name"),
+                "score": best.get("score"),
+                "mode": mode
             }
 
             if mode in ["full", "summary"]:
-                payload["summary"] = summary_content
+                payload["summary"] = summary
 
             if mode in ["full", "raw"]:
-                payload["content"] = full_content
+                payload["content"] = content
 
             json_response(self, payload)
             return
 
         # -------------------------
-        # UNKNOWN ROUTE
+        # FALLBACK
         # -------------------------
-        error_response(
-            self,
-            "Not found. Available endpoints: /health, /search?q=..., /top?q=..., /open?q=...&mode=...",
-            status=404,
-        )
+        error_response(self, "Invalid endpoint", 404)
 
     def log_message(self, format, *args):
-        """
-        Silence default HTTP logging so the terminal stays clean.
-        """
         return
 
 
 # =========================
-# SERVER START
+# SERVER
 # =========================
 
-def run_server():
-    """
-    Start the local PAIOS API server.
-    """
-    server = HTTPServer((HOST, PORT), PAIOSRequestHandler)
+def run():
+    server = HTTPServer((HOST, PORT), Handler)
 
     print(f"PAIOS API running at http://{HOST}:{PORT}")
     print("Endpoints:")
     print("  /health")
-    print("  /search?q=...&limit=...")
+    print("  /search?q=...&limit=...&min_score=...")
     print("  /top?q=...")
     print("  /open?q=...&mode=full|summary|raw")
 
@@ -272,4 +203,4 @@ def run_server():
 
 
 if __name__ == "__main__":
-    run_server()
+    run()
