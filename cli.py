@@ -1,10 +1,49 @@
 # =========================
-# PAIOS CLI (Interactive Mode)
+# PAIOS CLI (Menu Mode)
 # =========================
+# This version removes command typing.
+# User selects options → system asks inputs → executes using core.
 
 from scripts.core import run_query_core, extract_top_result, open_result
 
+# Path to index used by core engine
 INDEX_PATH = "memory/index/index.json"
+
+
+# =========================
+# INPUT HELPERS
+# =========================
+
+def ask(prompt, optional=False):
+    """
+    Ask user for input.
+    - If optional=True → empty input returns None
+    - Otherwise returns string
+    """
+    value = input(prompt).strip()
+
+    if not value and optional:
+        return None
+
+    return value
+
+
+def ask_int(prompt):
+    """
+    Ask for integer input safely.
+    - Returns int if valid
+    - Returns None if empty or invalid
+    """
+    value = input(prompt).strip()
+
+    if not value:
+        return None
+
+    try:
+        return int(value)
+    except:
+        print("Invalid number. Ignored.")
+        return None
 
 
 # =========================
@@ -12,40 +51,50 @@ INDEX_PATH = "memory/index/index.json"
 # =========================
 
 def print_results(results):
+    """
+    Display multiple search results.
+    """
     if not results:
-        print("No results found.\n")
+        print("\nNo results found.\n")
         return
 
     for i, r in enumerate(results, 1):
-        print(f"[{i}] {r.get('file_name')} (score: {r.get('score')})")
+        print(f"\n[{i}] {r.get('file_name')} (score: {r.get('score')})")
         print(r.get("preview"))
         print("-" * 40)
 
 
 def print_top(result):
+    """
+    Display best (top) result.
+    """
     if not result:
-        print("No result found.\n")
+        print("\nNo result found.\n")
         return
 
-    print(f"Top: {result.get('file_name')} (score: {result.get('score')})")
+    print(f"\nTop: {result.get('file_name')} (score: {result.get('score')})")
     print(result.get("preview"))
     print("-" * 40)
 
 
 def print_open(result):
+    """
+    Display opened result content depending on mode.
+    """
     if not result:
-        print("No result found.\n")
+        print("\nNo result found.\n")
         return
 
-    print(f"File: {result.get('file')}")
-    print(f"Score: {result.get('score')}")
-    print()
+    print(f"\nFile: {result.get('file')}")
+    print(f"Score: {result.get('score')}\n")
 
+    # Show summary if available
     if "summary" in result:
         print("=== SUMMARY ===")
         print(result["summary"])
         print()
 
+    # Show full content if available
     if "content" in result:
         print("=== CONTENT ===")
         print(result["content"])
@@ -53,121 +102,102 @@ def print_open(result):
 
 
 # =========================
-# COMMAND HANDLER
+# ACTIONS (CORE OPERATIONS)
 # =========================
 
-def handle_command(line):
+def action_search():
     """
-    Parse and execute user command.
+    Search multiple results.
     """
-    parts = line.strip().split()
+    q = ask("Query: ")
+    refine = ask("Refine (optional): ", optional=True)
+    limit = ask_int("Limit (optional): ")
+    min_score = ask_int("Min score (optional): ")
 
-    if not parts:
-        return
+    # Use shared core logic
+    full_query, results = run_query_core(
+        INDEX_PATH,
+        q,
+        refine=refine,
+        limit=limit,
+        min_score=min_score,
+    )
 
-    command = parts[0]
-    args = parts[1:]
+    print(f"\nQuery: {full_query}")
+    print_results(results)
 
-    params = {
-        "q": None,
-        "refine": None,
-        "limit": None,
-        "min_score": None,
-        "mode": "full",
-    }
 
-    for arg in args:
-        if "=" in arg:
-            key, value = arg.split("=", 1)
-            params[key] = value
-        else:
-            params["q"] = arg
+def action_top():
+    """
+    Get best result only.
+    """
+    q = ask("Query: ")
+    refine = ask("Refine (optional): ", optional=True)
 
-    q = params.get("q")
-    refine = params.get("refine")
-    limit = params.get("limit")
-    min_score = params.get("min_score")
-    mode = params.get("mode")
+    full_query, results = run_query_core(INDEX_PATH, q, refine=refine)
+    top = extract_top_result(results)
 
-    if limit:
-        limit = int(limit)
+    print(f"\nQuery: {full_query}")
+    print_top(top)
 
-    if min_score:
-        min_score = int(min_score)
 
-    if command == "help":
-        print("""
-Commands:
-  search <q> refine=... limit=... min_score=...
-  top <q> refine=...
-  open <q> refine=... mode=full|summary|raw
-  exit
-""")
-        return
+def action_open():
+    """
+    Open best result with selected mode.
+    """
+    q = ask("Query: ")
+    refine = ask("Refine (optional): ", optional=True)
+    mode = ask("Mode (full/summary/raw): ", optional=True) or "full"
 
-    if command == "exit":
-        print("Exiting PAIOS.")
-        exit()
+    full_query, results = run_query_core(INDEX_PATH, q, refine=refine)
+    top = extract_top_result(results)
 
-    if not q:
-        print("Missing query.\n")
-        return
+    # Use shared open logic
+    opened = open_result(top, mode=mode)
 
-    # =========================
-    # SEARCH
-    # =========================
-    if command == "search":
-        full_query, results = run_query_core(
-            INDEX_PATH,
-            q,
-            refine=refine,
-            limit=limit,
-            min_score=min_score,
-        )
-        print(f"\nQuery: {full_query}\n")
-        print_results(results)
-        return
-
-    # =========================
-    # TOP
-    # =========================
-    if command == "top":
-        full_query, results = run_query_core(INDEX_PATH, q, refine=refine)
-        top = extract_top_result(results)
-        print(f"\nQuery: {full_query}\n")
-        print_top(top)
-        return
-
-    # =========================
-    # OPEN
-    # =========================
-    if command == "open":
-        full_query, results = run_query_core(INDEX_PATH, q, refine=refine)
-        top = extract_top_result(results)
-        opened = open_result(top, mode=mode)
-        print(f"\nQuery: {full_query}\n")
-        print_open(opened)
-        return
-
-    print("Unknown command. Type 'help'.")
+    print(f"\nQuery: {full_query}")
+    print_open(opened)
 
 
 # =========================
-# INTERACTIVE LOOP
+# MENU LOOP
 # =========================
 
 def main():
-    print("PAIOS Interactive Mode")
-    print("Type 'help' for commands.\n")
+    """
+    Main loop:
+    - shows menu
+    - executes selected action
+    """
+    print("PAIOS Menu Mode\n")
 
     while True:
-        try:
-            line = input("PAIOS> ")
-            handle_command(line)
-        except KeyboardInterrupt:
-            print("\nExiting PAIOS.")
+        print("""
+1. Search
+2. Top Result
+3. Open Result
+4. Exit
+""")
+
+        choice = input("Select option: ").strip()
+
+        if choice == "1":
+            action_search()
+
+        elif choice == "2":
+            action_top()
+
+        elif choice == "3":
+            action_open()
+
+        elif choice == "4":
+            print("Exiting PAIOS.")
             break
 
+        else:
+            print("Invalid option.\n")
 
+
+# Entry point
 if __name__ == "__main__":
     main()
