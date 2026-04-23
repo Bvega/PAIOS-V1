@@ -1,17 +1,17 @@
 # =========================
-# PAIOS CLI (Core-aligned)
+# PAIOS CLI (Interactive Mode)
 # =========================
 
-import sys
 from scripts.core import run_query_core, extract_top_result, open_result
 
 INDEX_PATH = "memory/index/index.json"
 
 
+# =========================
+# PRINT HELPERS
+# =========================
+
 def print_results(results):
-    """
-    Print search results in CLI format.
-    """
     if not results:
         print("No results found.\n")
         return
@@ -23,9 +23,6 @@ def print_results(results):
 
 
 def print_top(result):
-    """
-    Print top result preview.
-    """
     if not result:
         print("No result found.\n")
         return
@@ -36,9 +33,6 @@ def print_top(result):
 
 
 def print_open(result):
-    """
-    Print opened result content.
-    """
     if not result:
         print("No result found.\n")
         return
@@ -58,19 +52,22 @@ def print_open(result):
         print()
 
 
-def parse_args(args):
-    """
-    Parse CLI arguments.
-    Supported:
-    - search q refine= limit= min_score=
-    - top q refine=
-    - open q refine= mode=
-    """
+# =========================
+# COMMAND HANDLER
+# =========================
 
-    if len(args) < 2:
-        return None, {}
+def handle_command(line):
+    """
+    Parse and execute user command.
+    """
+    parts = line.strip().split()
 
-    command = args[1]
+    if not parts:
+        return
+
+    command = parts[0]
+    args = parts[1:]
+
     params = {
         "q": None,
         "refine": None,
@@ -79,25 +76,12 @@ def parse_args(args):
         "mode": "full",
     }
 
-    for arg in args[2:]:
+    for arg in args:
         if "=" in arg:
             key, value = arg.split("=", 1)
             params[key] = value
         else:
             params["q"] = arg
-
-    return command, params
-
-
-def main():
-    command, params = parse_args(sys.argv)
-
-    if not command:
-        print("Usage:")
-        print("  search <q> refine=... limit=... min_score=...")
-        print("  top <q> refine=...")
-        print("  open <q> refine=... mode=full|summary|raw")
-        return
 
     q = params.get("q")
     refine = params.get("refine")
@@ -105,15 +89,28 @@ def main():
     min_score = params.get("min_score")
     mode = params.get("mode")
 
-    # Convert numeric params
     if limit:
         limit = int(limit)
 
     if min_score:
         min_score = int(min_score)
 
+    if command == "help":
+        print("""
+Commands:
+  search <q> refine=... limit=... min_score=...
+  top <q> refine=...
+  open <q> refine=... mode=full|summary|raw
+  exit
+""")
+        return
+
+    if command == "exit":
+        print("Exiting PAIOS.")
+        exit()
+
     if not q:
-        print("Missing query.")
+        print("Missing query.\n")
         return
 
     # =========================
@@ -127,7 +124,7 @@ def main():
             limit=limit,
             min_score=min_score,
         )
-        print(f"Query: {full_query}\n")
+        print(f"\nQuery: {full_query}\n")
         print_results(results)
         return
 
@@ -137,7 +134,7 @@ def main():
     if command == "top":
         full_query, results = run_query_core(INDEX_PATH, q, refine=refine)
         top = extract_top_result(results)
-        print(f"Query: {full_query}\n")
+        print(f"\nQuery: {full_query}\n")
         print_top(top)
         return
 
@@ -148,11 +145,28 @@ def main():
         full_query, results = run_query_core(INDEX_PATH, q, refine=refine)
         top = extract_top_result(results)
         opened = open_result(top, mode=mode)
-        print(f"Query: {full_query}\n")
+        print(f"\nQuery: {full_query}\n")
         print_open(opened)
         return
 
-    print("Unknown command.")
+    print("Unknown command. Type 'help'.")
+
+
+# =========================
+# INTERACTIVE LOOP
+# =========================
+
+def main():
+    print("PAIOS Interactive Mode")
+    print("Type 'help' for commands.\n")
+
+    while True:
+        try:
+            line = input("PAIOS> ")
+            handle_command(line)
+        except KeyboardInterrupt:
+            print("\nExiting PAIOS.")
+            break
 
 
 if __name__ == "__main__":
