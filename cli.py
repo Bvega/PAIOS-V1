@@ -1,10 +1,13 @@
 # =========================
-# PAIOS CLI (Smart Aggregation v2)
+# PAIOS CLI (Semantic Grouping v1)
 # =========================
-# New in Day 49:
-# - Deduplication
-# - Line compression
-# - Cleaner combined summaries
+# Day 50 adds:
+# - grouped combined summaries
+# - basic semantic categories
+# - cleaner knowledge synthesis
+#
+# This is still rule-based, not LLM-based.
+# It groups meaning by detected topic words.
 
 from scripts.core import run_query_core, extract_top_result, open_result
 
@@ -16,10 +19,16 @@ INDEX_PATH = "memory/index/index.json"
 # =========================
 
 def show_help():
+    """
+    Show natural-language examples.
+    """
     print("""
 PAIOS Natural Language Examples:
 
 find termination
+find liability
+find payment terms
+
 top termination
 open termination
 
@@ -33,6 +42,11 @@ exit
 # =========================
 
 def parse_input(user_input):
+    """
+    Convert natural language into:
+    - intent: search / top / open
+    - query: cleaned search text
+    """
     text = user_input.lower().strip()
 
     if text.startswith(("open", "show", "read")):
@@ -57,27 +71,36 @@ def parse_input(user_input):
 
 
 def auto_refine(query):
+    """
+    Add summary refinement for multi-word queries.
+    """
     if len(query.split()) >= 2:
         return "summary"
     return None
 
 
 # =========================
-# OUTPUT
+# OUTPUT HELPERS
 # =========================
 
 def print_results(results):
+    """
+    Print raw ranked search results.
+    """
     if not results:
         print("\nNo results found.\n")
         return
 
-    for i, r in enumerate(results, 1):
-        print(f"\n[{i}] {r.get('file_name')} (score: {r.get('score')})")
-        print(r.get("preview"))
+    for i, result in enumerate(results, 1):
+        print(f"\n[{i}] {result.get('file_name')} (score: {result.get('score')})")
+        print(result.get("preview"))
         print("-" * 40)
 
 
 def print_top(result):
+    """
+    Print only the highest-ranked result.
+    """
     if not result:
         print("\nNo result found.\n")
         return
@@ -88,6 +111,9 @@ def print_top(result):
 
 
 def print_open(result):
+    """
+    Print opened result content.
+    """
     if not result:
         print("\nNo result found.\n")
         return
@@ -111,13 +137,16 @@ def print_open(result):
 # =========================
 
 def generate_insights(results):
+    """
+    Generate simple search-level insights.
+    """
     if not results:
         return
 
     print("\n=== INSIGHTS ===")
     print(f"- Found in {len(results)} document(s)")
 
-    previews = [r.get("preview", "") for r in results]
+    previews = [result.get("preview", "") for result in results]
 
     keywords = ["terminate", "termination", "liability", "payment"]
     found = set()
@@ -128,82 +157,133 @@ def generate_insights(results):
                 found.add(word)
 
     if found:
-        print(f"- Common terms: {', '.join(found)}")
+        print(f"- Common terms: {', '.join(sorted(found))}")
 
     print()
 
 
 # =========================
-# NEW: SMART MERGING
+# SEMANTIC GROUPING
 # =========================
 
-def clean_and_merge(lines):
+def classify_line(line):
     """
-    Deduplicate and clean summary lines.
+    Classify one summary line into a basic meaning group.
+
+    Current groups:
+    - Termination
+    - Liability
+    - Payment
+    - General
+
+    This keeps the system simple and transparent.
+    """
+    lower_line = line.lower()
+
+    if "terminate" in lower_line or "termination" in lower_line:
+        return "Termination"
+
+    if "liability" in lower_line or "responsible" in lower_line or "damages" in lower_line:
+        return "Liability"
+
+    if "payment" in lower_line or "paid" in lower_line or "received" in lower_line:
+        return "Payment"
+
+    return "General"
+
+
+def clean_summary_lines(results):
+    """
+    Load summary files, split them into lines, and remove duplicates.
     """
     seen = set()
-    cleaned = []
+    cleaned_lines = []
 
-    for line in lines:
-        line = line.strip()
+    for result in results:
+        summary_path = result.get("summary_path")
 
-        # skip empty lines
-        if not line:
+        if not summary_path:
             continue
 
-        # normalize for dedup
-        key = line.lower()
+        try:
+            with open(summary_path, "r", encoding="utf-8") as file:
+                content = file.read()
+        except Exception:
+            continue
 
-        if key not in seen:
-            seen.add(key)
-            cleaned.append(line)
+        for line in content.split("\n"):
+            line = line.strip()
 
-    return cleaned
+            if not line:
+                continue
+
+            key = line.lower()
+
+            if key not in seen:
+                seen.add(key)
+                cleaned_lines.append(line)
+
+    return cleaned_lines
+
+
+def group_summary_lines(lines):
+    """
+    Group cleaned summary lines into semantic buckets.
+    """
+    groups = {
+        "Termination": [],
+        "Liability": [],
+        "Payment": [],
+        "General": [],
+    }
+
+    for line in lines:
+        category = classify_line(line)
+        groups[category].append(line)
+
+    return groups
 
 
 def generate_combined_summary(results):
     """
-    Smart merged summary:
-    - loads summaries
-    - splits into lines
-    - deduplicates
-    """
+    Generate grouped combined summary from matching documents.
 
+    This is the Day 50 upgrade:
+    instead of one flat list, results are grouped by meaning.
+    """
     if not results:
         return
 
-    print("\n=== COMBINED SUMMARY ===")
+    print("\n=== GROUPED SUMMARY ===")
 
-    all_lines = []
+    lines = clean_summary_lines(results)
 
-    for r in results:
-        summary_path = r.get("summary_path")
+    if not lines:
+        print("No summary data available.\n")
+        return
 
-        if summary_path:
-            try:
-                with open(summary_path, "r") as f:
-                    content = f.read()
-                    lines = content.split("\n")
-                    all_lines.extend(lines)
-            except:
-                continue
+    groups = group_summary_lines(lines)
 
-    merged = clean_and_merge(all_lines)
+    for category, items in groups.items():
+        if not items:
+            continue
 
-    if merged:
-        for line in merged:
-            print(f"- {line}")
-    else:
-        print("No summary data available.")
+        print(f"\n[{category}]")
+
+        for item in items:
+            print(f"- {item}")
 
     print()
 
 
 # =========================
-# MAIN
+# MAIN LOOP
 # =========================
 
 def main():
+    """
+    Run the natural-language CLI loop.
+    """
     print("PAIOS Natural Language Mode")
     print("Type 'help' for examples. Type 'exit' to quit.\n")
 
@@ -225,6 +305,7 @@ def main():
             continue
 
         if not user_input:
+            print("Type something or 'help'.\n")
             continue
 
         intent, query = parse_input(user_input)
@@ -238,7 +319,7 @@ def main():
         full_query, results = run_query_core(
             INDEX_PATH,
             query,
-            refine=refine
+            refine=refine,
         )
 
         print(f"\nQuery: {full_query}")
