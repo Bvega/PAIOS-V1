@@ -1,17 +1,16 @@
 # =========================
-# PAIOS CLI (Menu Mode + Presets)
+# PAIOS CLI (Smart Mode)
 # =========================
-# Adds memory:
-# - last refine
-# - last limit
-# - last min_score
+# Adds:
+# - presets (day 43)
+# - smart refine auto-selection (day 44)
 
 from scripts.core import run_query_core, extract_top_result, open_result
 
 INDEX_PATH = "memory/index/index.json"
 
 # =========================
-# GLOBAL PRESETS (memory)
+# MEMORY (PRESETS)
 # =========================
 last_refine = None
 last_limit = None
@@ -19,14 +18,32 @@ last_min_score = None
 
 
 # =========================
+# SMART LOGIC
+# =========================
+
+def auto_refine(query, refine):
+    """
+    Smart behavior:
+    - If refine provided → use it
+    - If not:
+        short query → None
+        long query → "summary"
+    """
+    if refine:
+        return refine
+
+    # simple heuristic
+    if len(query.split()) >= 2:
+        return "summary"
+
+    return None
+
+
+# =========================
 # INPUT HELPERS
 # =========================
 
 def ask(prompt, optional=False, default=None):
-    """
-    Ask user input with optional default.
-    Press Enter → uses default value
-    """
     if default:
         value = input(f"{prompt} [{default}]: ").strip()
     else:
@@ -39,9 +56,6 @@ def ask(prompt, optional=False, default=None):
 
 
 def ask_int(prompt, default=None):
-    """
-    Ask integer with optional default.
-    """
     if default is not None:
         value = input(f"{prompt} [{default}]: ").strip()
     else:
@@ -110,11 +124,12 @@ def action_search():
 
     q = ask("Query: ")
 
-    refine = ask("Refine (optional): ", optional=True, default=last_refine)
+    refine_input = ask("Refine (optional): ", optional=True, default=last_refine)
+    refine = auto_refine(q, refine_input)
+
     limit = ask_int("Limit (optional): ", default=last_limit)
     min_score = ask_int("Min score (optional): ", default=last_min_score)
 
-    # Save presets
     last_refine = refine
     last_limit = limit
     last_min_score = min_score
@@ -135,7 +150,8 @@ def action_top():
     global last_refine
 
     q = ask("Query: ")
-    refine = ask("Refine (optional): ", optional=True, default=last_refine)
+    refine_input = ask("Refine (optional): ", optional=True, default=last_refine)
+    refine = auto_refine(q, refine_input)
 
     last_refine = refine
 
@@ -150,7 +166,9 @@ def action_open():
     global last_refine
 
     q = ask("Query: ")
-    refine = ask("Refine (optional): ", optional=True, default=last_refine)
+    refine_input = ask("Refine (optional): ", optional=True, default=last_refine)
+    refine = auto_refine(q, refine_input)
+
     mode = ask("Mode (full/summary/raw): ", optional=True, default="full")
 
     last_refine = refine
@@ -169,7 +187,7 @@ def action_open():
 # =========================
 
 def main():
-    print("PAIOS Menu Mode (with memory)\n")
+    print("PAIOS Smart Mode\n")
 
     while True:
         print("""
