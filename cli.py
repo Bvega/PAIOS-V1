@@ -1,11 +1,11 @@
 # =========================
-# PAIOS CLI (Natural Language Mode + Help)
+# PAIOS CLI (Natural Language Mode + Help + Insights)
 # =========================
-# User can type natural phrases like:
-# - find test summary
-# - top test summary
-# - open test summary
-# The CLI detects intent automatically and explains usage.
+# This version adds:
+# - Natural language input
+# - Help system
+# - Smart refine
+# - Cross-document insights (NEW)
 
 from scripts.core import run_query_core, extract_top_result, open_result
 
@@ -18,7 +18,7 @@ INDEX_PATH = "memory/index/index.json"
 
 def show_help():
     """
-    Show examples so users know what to ask.
+    Display usage examples so user knows what to type.
     """
     print("""
 PAIOS Natural Language Examples:
@@ -30,12 +30,10 @@ Search:
 
 Top result:
   top test
-  top test summary
   best contracts termination
 
 Open result:
   open test
-  open test summary
   open contracts termination
 
 Other:
@@ -50,12 +48,7 @@ Other:
 
 def parse_input(user_input):
     """
-    Detect user intent from simple natural language.
-
-    Supported intents:
-    - search
-    - top
-    - open
+    Detect user intent from natural language.
     """
     text = user_input.lower().strip()
 
@@ -66,7 +59,6 @@ def parse_input(user_input):
     else:
         intent = "search"
 
-    # Remove command-like words to leave only query terms.
     remove_words = [
         "open", "show", "read",
         "top", "best",
@@ -86,10 +78,7 @@ def parse_input(user_input):
 
 def auto_refine(query):
     """
-    Automatically refine longer queries.
-
-    If query has two or more words, add 'summary'
-    as a simple refinement heuristic.
+    Auto-add 'summary' when query has multiple words.
     """
     if len(query.split()) >= 2:
         return "summary"
@@ -116,7 +105,7 @@ def print_results(results):
 
 def print_top(result):
     """
-    Print only the best result.
+    Print best result.
     """
     if not result:
         print("\nNo result found.\n")
@@ -129,7 +118,7 @@ def print_top(result):
 
 def print_open(result):
     """
-    Print opened result content.
+    Print full result content.
     """
     if not result:
         print("\nNo result found.\n")
@@ -150,12 +139,54 @@ def print_open(result):
 
 
 # =========================
+# NEW: MULTI-DOCUMENT INSIGHTS
+# =========================
+
+def generate_insights(results):
+    """
+    Generate simple cross-document insights.
+
+    Current behavior:
+    - Counts documents
+    - Detects repeated keywords across results
+
+    This simulates early-stage "reasoning".
+    """
+
+    if not results:
+        return
+
+    print("\n=== INSIGHTS ===")
+
+    # Count number of documents
+    print(f"- Found in {len(results)} document(s)")
+
+    # Extract preview text from each result
+    previews = [r.get("preview", "") for r in results]
+
+    # Simple keyword detection
+    keywords = ["terminate", "termination", "liability", "payment"]
+
+    found_keywords = set()
+
+    for text in previews:
+        for word in keywords:
+            if word in text.lower():
+                found_keywords.add(word)
+
+    if found_keywords:
+        print(f"- Common terms: {', '.join(found_keywords)}")
+
+    print()
+
+
+# =========================
 # MAIN LOOP
 # =========================
 
 def main():
     """
-    Start natural-language CLI loop.
+    Main interactive loop.
     """
     print("PAIOS Natural Language Mode")
     print("Type 'help' for examples. Type 'exit' to quit.\n")
@@ -163,7 +194,11 @@ def main():
     show_help()
 
     while True:
-        user_input = input("PAIOS> ").strip()
+        try:
+            user_input = input("PAIOS> ").strip()
+        except KeyboardInterrupt:
+            print("\nExiting PAIOS.")
+            break
 
         if user_input.lower() in ["exit", "quit"]:
             print("Exiting PAIOS.")
@@ -180,7 +215,7 @@ def main():
         intent, query = parse_input(user_input)
 
         if not query:
-            print("I need a search topic. Type 'help' for examples.\n")
+            print("I need a search topic. Type 'help'.\n")
             continue
 
         refine = auto_refine(query)
@@ -188,13 +223,14 @@ def main():
         full_query, results = run_query_core(
             INDEX_PATH,
             query,
-            refine=refine,
+            refine=refine
         )
 
         print(f"\nQuery: {full_query}")
 
         if intent == "search":
             print_results(results)
+            generate_insights(results)  # NEW HOOK
 
         elif intent == "top":
             top = extract_top_result(results)
@@ -206,6 +242,9 @@ def main():
             print_open(opened)
 
 
+# =========================
+# ENTRY POINT
+# =========================
+
 if __name__ == "__main__":
     main()
-    
