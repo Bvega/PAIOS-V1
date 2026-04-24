@@ -1,49 +1,60 @@
 # =========================
-# PAIOS CLI (Menu Mode)
+# PAIOS CLI (Menu Mode + Presets)
 # =========================
-# This version removes command typing.
-# User selects options → system asks inputs → executes using core.
+# Adds memory:
+# - last refine
+# - last limit
+# - last min_score
 
 from scripts.core import run_query_core, extract_top_result, open_result
 
-# Path to index used by core engine
 INDEX_PATH = "memory/index/index.json"
+
+# =========================
+# GLOBAL PRESETS (memory)
+# =========================
+last_refine = None
+last_limit = None
+last_min_score = None
 
 
 # =========================
 # INPUT HELPERS
 # =========================
 
-def ask(prompt, optional=False):
+def ask(prompt, optional=False, default=None):
     """
-    Ask user for input.
-    - If optional=True → empty input returns None
-    - Otherwise returns string
+    Ask user input with optional default.
+    Press Enter → uses default value
     """
-    value = input(prompt).strip()
+    if default:
+        value = input(f"{prompt} [{default}]: ").strip()
+    else:
+        value = input(prompt).strip()
 
-    if not value and optional:
-        return None
+    if not value:
+        return default if optional else value
 
     return value
 
 
-def ask_int(prompt):
+def ask_int(prompt, default=None):
     """
-    Ask for integer input safely.
-    - Returns int if valid
-    - Returns None if empty or invalid
+    Ask integer with optional default.
     """
-    value = input(prompt).strip()
+    if default is not None:
+        value = input(f"{prompt} [{default}]: ").strip()
+    else:
+        value = input(prompt).strip()
 
     if not value:
-        return None
+        return default
 
     try:
         return int(value)
     except:
-        print("Invalid number. Ignored.")
-        return None
+        print("Invalid number. Using default.")
+        return default
 
 
 # =========================
@@ -51,9 +62,6 @@ def ask_int(prompt):
 # =========================
 
 def print_results(results):
-    """
-    Display multiple search results.
-    """
     if not results:
         print("\nNo results found.\n")
         return
@@ -65,9 +73,6 @@ def print_results(results):
 
 
 def print_top(result):
-    """
-    Display best (top) result.
-    """
     if not result:
         print("\nNo result found.\n")
         return
@@ -78,9 +83,6 @@ def print_top(result):
 
 
 def print_open(result):
-    """
-    Display opened result content depending on mode.
-    """
     if not result:
         print("\nNo result found.\n")
         return
@@ -88,13 +90,11 @@ def print_open(result):
     print(f"\nFile: {result.get('file')}")
     print(f"Score: {result.get('score')}\n")
 
-    # Show summary if available
     if "summary" in result:
         print("=== SUMMARY ===")
         print(result["summary"])
         print()
 
-    # Show full content if available
     if "content" in result:
         print("=== CONTENT ===")
         print(result["content"])
@@ -102,19 +102,23 @@ def print_open(result):
 
 
 # =========================
-# ACTIONS (CORE OPERATIONS)
+# ACTIONS
 # =========================
 
 def action_search():
-    """
-    Search multiple results.
-    """
-    q = ask("Query: ")
-    refine = ask("Refine (optional): ", optional=True)
-    limit = ask_int("Limit (optional): ")
-    min_score = ask_int("Min score (optional): ")
+    global last_refine, last_limit, last_min_score
 
-    # Use shared core logic
+    q = ask("Query: ")
+
+    refine = ask("Refine (optional): ", optional=True, default=last_refine)
+    limit = ask_int("Limit (optional): ", default=last_limit)
+    min_score = ask_int("Min score (optional): ", default=last_min_score)
+
+    # Save presets
+    last_refine = refine
+    last_limit = limit
+    last_min_score = min_score
+
     full_query, results = run_query_core(
         INDEX_PATH,
         q,
@@ -128,11 +132,12 @@ def action_search():
 
 
 def action_top():
-    """
-    Get best result only.
-    """
+    global last_refine
+
     q = ask("Query: ")
-    refine = ask("Refine (optional): ", optional=True)
+    refine = ask("Refine (optional): ", optional=True, default=last_refine)
+
+    last_refine = refine
 
     full_query, results = run_query_core(INDEX_PATH, q, refine=refine)
     top = extract_top_result(results)
@@ -142,17 +147,17 @@ def action_top():
 
 
 def action_open():
-    """
-    Open best result with selected mode.
-    """
+    global last_refine
+
     q = ask("Query: ")
-    refine = ask("Refine (optional): ", optional=True)
-    mode = ask("Mode (full/summary/raw): ", optional=True) or "full"
+    refine = ask("Refine (optional): ", optional=True, default=last_refine)
+    mode = ask("Mode (full/summary/raw): ", optional=True, default="full")
+
+    last_refine = refine
 
     full_query, results = run_query_core(INDEX_PATH, q, refine=refine)
     top = extract_top_result(results)
 
-    # Use shared open logic
     opened = open_result(top, mode=mode)
 
     print(f"\nQuery: {full_query}")
@@ -160,16 +165,11 @@ def action_open():
 
 
 # =========================
-# MENU LOOP
+# MENU
 # =========================
 
 def main():
-    """
-    Main loop:
-    - shows menu
-    - executes selected action
-    """
-    print("PAIOS Menu Mode\n")
+    print("PAIOS Menu Mode (with memory)\n")
 
     while True:
         print("""
@@ -183,21 +183,16 @@ def main():
 
         if choice == "1":
             action_search()
-
         elif choice == "2":
             action_top()
-
         elif choice == "3":
             action_open()
-
         elif choice == "4":
             print("Exiting PAIOS.")
             break
-
         else:
             print("Invalid option.\n")
 
 
-# Entry point
 if __name__ == "__main__":
     main()
