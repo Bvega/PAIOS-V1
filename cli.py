@@ -1,9 +1,10 @@
 # =========================
-# PAIOS CLI (Natural Language + Insights + Aggregation)
+# PAIOS CLI (Smart Aggregation v2)
 # =========================
-# New in Day 48:
-# - Combines summaries from multiple documents
-# - Produces a unified "AI-style" response
+# New in Day 49:
+# - Deduplication
+# - Line compression
+# - Cleaner combined summaries
 
 from scripts.core import run_query_core, extract_top_result, open_result
 
@@ -18,19 +19,12 @@ def show_help():
     print("""
 PAIOS Natural Language Examples:
 
-Search:
-  find termination
-  find contracts summary
+find termination
+top termination
+open termination
 
-Top:
-  top termination
-
-Open:
-  open termination
-
-Other:
-  help
-  exit
+help
+exit
 """)
 
 
@@ -53,16 +47,13 @@ def parse_input(user_input):
         "top", "best",
         "find", "search",
         "about", "for",
-        "result", "results",
     ]
 
     query = text
     for word in remove_words:
         query = query.replace(word, "")
 
-    query = " ".join(query.split())
-
-    return intent, query
+    return intent, " ".join(query.split())
 
 
 def auto_refine(query):
@@ -116,7 +107,7 @@ def print_open(result):
 
 
 # =========================
-# INSIGHTS (Day 47)
+# INSIGHTS
 # =========================
 
 def generate_insights(results):
@@ -143,12 +134,39 @@ def generate_insights(results):
 
 
 # =========================
-# NEW: AGGREGATED SUMMARY
+# NEW: SMART MERGING
 # =========================
+
+def clean_and_merge(lines):
+    """
+    Deduplicate and clean summary lines.
+    """
+    seen = set()
+    cleaned = []
+
+    for line in lines:
+        line = line.strip()
+
+        # skip empty lines
+        if not line:
+            continue
+
+        # normalize for dedup
+        key = line.lower()
+
+        if key not in seen:
+            seen.add(key)
+            cleaned.append(line)
+
+    return cleaned
+
 
 def generate_combined_summary(results):
     """
-    Combine summaries from multiple documents.
+    Smart merged summary:
+    - loads summaries
+    - splits into lines
+    - deduplicates
     """
 
     if not results:
@@ -156,26 +174,27 @@ def generate_combined_summary(results):
 
     print("\n=== COMBINED SUMMARY ===")
 
-    combined = []
+    all_lines = []
 
     for r in results:
-        file_name = r.get("file_name")
         summary_path = r.get("summary_path")
 
-        # Try loading summary file
         if summary_path:
             try:
                 with open(summary_path, "r") as f:
-                    content = f.read().strip()
-                    combined.append(f"- {content} ({file_name})")
+                    content = f.read()
+                    lines = content.split("\n")
+                    all_lines.extend(lines)
             except:
                 continue
 
-    if combined:
-        for line in combined:
-            print(line)
+    merged = clean_and_merge(all_lines)
+
+    if merged:
+        for line in merged:
+            print(f"- {line}")
     else:
-        print("No summaries available.")
+        print("No summary data available.")
 
     print()
 
@@ -206,7 +225,6 @@ def main():
             continue
 
         if not user_input:
-            print("Type something.\n")
             continue
 
         intent, query = parse_input(user_input)
@@ -228,7 +246,7 @@ def main():
         if intent == "search":
             print_results(results)
             generate_insights(results)
-            generate_combined_summary(results)  # NEW
+            generate_combined_summary(results)
 
         elif intent == "top":
             top = extract_top_result(results)
