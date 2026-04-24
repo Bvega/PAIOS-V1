@@ -1,92 +1,123 @@
 # =========================
-# PAIOS CLI (Smart Mode)
+# PAIOS CLI (Natural Language Mode + Help)
 # =========================
-# Adds:
-# - presets (day 43)
-# - smart refine auto-selection (day 44)
+# User can type natural phrases like:
+# - find test summary
+# - top test summary
+# - open test summary
+# The CLI detects intent automatically and explains usage.
 
 from scripts.core import run_query_core, extract_top_result, open_result
 
 INDEX_PATH = "memory/index/index.json"
 
-# =========================
-# MEMORY (PRESETS)
-# =========================
-last_refine = None
-last_limit = None
-last_min_score = None
-
 
 # =========================
-# SMART LOGIC
+# HELP TEXT
 # =========================
 
-def auto_refine(query, refine):
+def show_help():
     """
-    Smart behavior:
-    - If refine provided → use it
-    - If not:
-        short query → None
-        long query → "summary"
+    Show examples so users know what to ask.
     """
-    if refine:
-        return refine
+    print("""
+PAIOS Natural Language Examples:
 
-    # simple heuristic
+Search:
+  find test
+  find test summary
+  search contracts termination
+
+Top result:
+  top test
+  top test summary
+  best contracts termination
+
+Open result:
+  open test
+  open test summary
+  open contracts termination
+
+Other:
+  help
+  exit
+""")
+
+
+# =========================
+# INTENT PARSER
+# =========================
+
+def parse_input(user_input):
+    """
+    Detect user intent from simple natural language.
+
+    Supported intents:
+    - search
+    - top
+    - open
+    """
+    text = user_input.lower().strip()
+
+    if text.startswith(("open", "show", "read")):
+        intent = "open"
+    elif text.startswith(("top", "best")):
+        intent = "top"
+    else:
+        intent = "search"
+
+    # Remove command-like words to leave only query terms.
+    remove_words = [
+        "open", "show", "read",
+        "top", "best",
+        "find", "search",
+        "about", "for",
+        "result", "results",
+    ]
+
+    query = text
+    for word in remove_words:
+        query = query.replace(word, "")
+
+    query = " ".join(query.split())
+
+    return intent, query
+
+
+def auto_refine(query):
+    """
+    Automatically refine longer queries.
+
+    If query has two or more words, add 'summary'
+    as a simple refinement heuristic.
+    """
     if len(query.split()) >= 2:
         return "summary"
-
     return None
 
 
 # =========================
-# INPUT HELPERS
-# =========================
-
-def ask(prompt, optional=False, default=None):
-    if default:
-        value = input(f"{prompt} [{default}]: ").strip()
-    else:
-        value = input(prompt).strip()
-
-    if not value:
-        return default if optional else value
-
-    return value
-
-
-def ask_int(prompt, default=None):
-    if default is not None:
-        value = input(f"{prompt} [{default}]: ").strip()
-    else:
-        value = input(prompt).strip()
-
-    if not value:
-        return default
-
-    try:
-        return int(value)
-    except:
-        print("Invalid number. Using default.")
-        return default
-
-
-# =========================
-# PRINT HELPERS
+# OUTPUT HELPERS
 # =========================
 
 def print_results(results):
+    """
+    Print search results.
+    """
     if not results:
         print("\nNo results found.\n")
         return
 
-    for i, r in enumerate(results, 1):
-        print(f"\n[{i}] {r.get('file_name')} (score: {r.get('score')})")
-        print(r.get("preview"))
+    for i, result in enumerate(results, 1):
+        print(f"\n[{i}] {result.get('file_name')} (score: {result.get('score')})")
+        print(result.get("preview"))
         print("-" * 40)
 
 
 def print_top(result):
+    """
+    Print only the best result.
+    """
     if not result:
         print("\nNo result found.\n")
         return
@@ -97,6 +128,9 @@ def print_top(result):
 
 
 def print_open(result):
+    """
+    Print opened result content.
+    """
     if not result:
         print("\nNo result found.\n")
         return
@@ -116,101 +150,62 @@ def print_open(result):
 
 
 # =========================
-# ACTIONS
-# =========================
-
-def action_search():
-    global last_refine, last_limit, last_min_score
-
-    q = ask("Query: ")
-
-    refine_input = ask("Refine (optional): ", optional=True, default=last_refine)
-    refine = auto_refine(q, refine_input)
-
-    limit = ask_int("Limit (optional): ", default=last_limit)
-    min_score = ask_int("Min score (optional): ", default=last_min_score)
-
-    last_refine = refine
-    last_limit = limit
-    last_min_score = min_score
-
-    full_query, results = run_query_core(
-        INDEX_PATH,
-        q,
-        refine=refine,
-        limit=limit,
-        min_score=min_score,
-    )
-
-    print(f"\nQuery: {full_query}")
-    print_results(results)
-
-
-def action_top():
-    global last_refine
-
-    q = ask("Query: ")
-    refine_input = ask("Refine (optional): ", optional=True, default=last_refine)
-    refine = auto_refine(q, refine_input)
-
-    last_refine = refine
-
-    full_query, results = run_query_core(INDEX_PATH, q, refine=refine)
-    top = extract_top_result(results)
-
-    print(f"\nQuery: {full_query}")
-    print_top(top)
-
-
-def action_open():
-    global last_refine
-
-    q = ask("Query: ")
-    refine_input = ask("Refine (optional): ", optional=True, default=last_refine)
-    refine = auto_refine(q, refine_input)
-
-    mode = ask("Mode (full/summary/raw): ", optional=True, default="full")
-
-    last_refine = refine
-
-    full_query, results = run_query_core(INDEX_PATH, q, refine=refine)
-    top = extract_top_result(results)
-
-    opened = open_result(top, mode=mode)
-
-    print(f"\nQuery: {full_query}")
-    print_open(opened)
-
-
-# =========================
-# MENU
+# MAIN LOOP
 # =========================
 
 def main():
-    print("PAIOS Smart Mode\n")
+    """
+    Start natural-language CLI loop.
+    """
+    print("PAIOS Natural Language Mode")
+    print("Type 'help' for examples. Type 'exit' to quit.\n")
+
+    show_help()
 
     while True:
-        print("""
-1. Search
-2. Top Result
-3. Open Result
-4. Exit
-""")
+        user_input = input("PAIOS> ").strip()
 
-        choice = input("Select option: ").strip()
-
-        if choice == "1":
-            action_search()
-        elif choice == "2":
-            action_top()
-        elif choice == "3":
-            action_open()
-        elif choice == "4":
+        if user_input.lower() in ["exit", "quit"]:
             print("Exiting PAIOS.")
             break
-        else:
-            print("Invalid option.\n")
+
+        if user_input.lower() == "help":
+            show_help()
+            continue
+
+        if not user_input:
+            print("Type a request or 'help'.\n")
+            continue
+
+        intent, query = parse_input(user_input)
+
+        if not query:
+            print("I need a search topic. Type 'help' for examples.\n")
+            continue
+
+        refine = auto_refine(query)
+
+        full_query, results = run_query_core(
+            INDEX_PATH,
+            query,
+            refine=refine,
+        )
+
+        print(f"\nQuery: {full_query}")
+
+        if intent == "search":
+            print_results(results)
+
+        elif intent == "top":
+            top = extract_top_result(results)
+            print_top(top)
+
+        elif intent == "open":
+            top = extract_top_result(results)
+            opened = open_result(top, mode="full")
+            print_open(opened)
 
 
 if __name__ == "__main__":
     main()
+    
