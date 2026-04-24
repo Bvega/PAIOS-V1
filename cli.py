@@ -1,11 +1,9 @@
 # =========================
-# PAIOS CLI (Natural Language Mode + Help + Insights)
+# PAIOS CLI (Natural Language + Insights + Aggregation)
 # =========================
-# This version adds:
-# - Natural language input
-# - Help system
-# - Smart refine
-# - Cross-document insights (NEW)
+# New in Day 48:
+# - Combines summaries from multiple documents
+# - Produces a unified "AI-style" response
 
 from scripts.core import run_query_core, extract_top_result, open_result
 
@@ -13,28 +11,22 @@ INDEX_PATH = "memory/index/index.json"
 
 
 # =========================
-# HELP TEXT
+# HELP
 # =========================
 
 def show_help():
-    """
-    Display usage examples so user knows what to type.
-    """
     print("""
 PAIOS Natural Language Examples:
 
 Search:
-  find test
-  find test summary
-  search contracts termination
+  find termination
+  find contracts summary
 
-Top result:
-  top test
-  best contracts termination
+Top:
+  top termination
 
-Open result:
-  open test
-  open contracts termination
+Open:
+  open termination
 
 Other:
   help
@@ -43,13 +35,10 @@ Other:
 
 
 # =========================
-# INTENT PARSER
+# PARSER
 # =========================
 
 def parse_input(user_input):
-    """
-    Detect user intent from natural language.
-    """
     text = user_input.lower().strip()
 
     if text.startswith(("open", "show", "read")):
@@ -77,36 +66,27 @@ def parse_input(user_input):
 
 
 def auto_refine(query):
-    """
-    Auto-add 'summary' when query has multiple words.
-    """
     if len(query.split()) >= 2:
         return "summary"
     return None
 
 
 # =========================
-# OUTPUT HELPERS
+# OUTPUT
 # =========================
 
 def print_results(results):
-    """
-    Print search results.
-    """
     if not results:
         print("\nNo results found.\n")
         return
 
-    for i, result in enumerate(results, 1):
-        print(f"\n[{i}] {result.get('file_name')} (score: {result.get('score')})")
-        print(result.get("preview"))
+    for i, r in enumerate(results, 1):
+        print(f"\n[{i}] {r.get('file_name')} (score: {r.get('score')})")
+        print(r.get("preview"))
         print("-" * 40)
 
 
 def print_top(result):
-    """
-    Print best result.
-    """
     if not result:
         print("\nNo result found.\n")
         return
@@ -117,9 +97,6 @@ def print_top(result):
 
 
 def print_open(result):
-    """
-    Print full result content.
-    """
     if not result:
         print("\nNo result found.\n")
         return
@@ -139,55 +116,75 @@ def print_open(result):
 
 
 # =========================
-# NEW: MULTI-DOCUMENT INSIGHTS
+# INSIGHTS (Day 47)
 # =========================
 
 def generate_insights(results):
-    """
-    Generate simple cross-document insights.
-
-    Current behavior:
-    - Counts documents
-    - Detects repeated keywords across results
-
-    This simulates early-stage "reasoning".
-    """
-
     if not results:
         return
 
     print("\n=== INSIGHTS ===")
-
-    # Count number of documents
     print(f"- Found in {len(results)} document(s)")
 
-    # Extract preview text from each result
     previews = [r.get("preview", "") for r in results]
 
-    # Simple keyword detection
     keywords = ["terminate", "termination", "liability", "payment"]
-
-    found_keywords = set()
+    found = set()
 
     for text in previews:
         for word in keywords:
             if word in text.lower():
-                found_keywords.add(word)
+                found.add(word)
 
-    if found_keywords:
-        print(f"- Common terms: {', '.join(found_keywords)}")
+    if found:
+        print(f"- Common terms: {', '.join(found)}")
 
     print()
 
 
 # =========================
-# MAIN LOOP
+# NEW: AGGREGATED SUMMARY
+# =========================
+
+def generate_combined_summary(results):
+    """
+    Combine summaries from multiple documents.
+    """
+
+    if not results:
+        return
+
+    print("\n=== COMBINED SUMMARY ===")
+
+    combined = []
+
+    for r in results:
+        file_name = r.get("file_name")
+        summary_path = r.get("summary_path")
+
+        # Try loading summary file
+        if summary_path:
+            try:
+                with open(summary_path, "r") as f:
+                    content = f.read().strip()
+                    combined.append(f"- {content} ({file_name})")
+            except:
+                continue
+
+    if combined:
+        for line in combined:
+            print(line)
+    else:
+        print("No summaries available.")
+
+    print()
+
+
+# =========================
+# MAIN
 # =========================
 
 def main():
-    """
-    Main interactive loop.
-    """
     print("PAIOS Natural Language Mode")
     print("Type 'help' for examples. Type 'exit' to quit.\n")
 
@@ -209,13 +206,13 @@ def main():
             continue
 
         if not user_input:
-            print("Type a request or 'help'.\n")
+            print("Type something.\n")
             continue
 
         intent, query = parse_input(user_input)
 
         if not query:
-            print("I need a search topic. Type 'help'.\n")
+            print("Missing query.\n")
             continue
 
         refine = auto_refine(query)
@@ -230,7 +227,8 @@ def main():
 
         if intent == "search":
             print_results(results)
-            generate_insights(results)  # NEW HOOK
+            generate_insights(results)
+            generate_combined_summary(results)  # NEW
 
         elif intent == "top":
             top = extract_top_result(results)
@@ -241,10 +239,6 @@ def main():
             opened = open_result(top, mode="full")
             print_open(opened)
 
-
-# =========================
-# ENTRY POINT
-# =========================
 
 if __name__ == "__main__":
     main()
