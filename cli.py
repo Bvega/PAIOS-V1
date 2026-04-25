@@ -1,10 +1,10 @@
 # =========================
-# PAIOS CLI (Answer Engine v1 + UX FIX)
+# PAIOS CLI (Answer Engine v3 — Modes + Stable Help)
 # =========================
-# FIX:
-# - Restores help + usability
-# - Keeps narrative answer
-# - Adds optional debug view (results if needed)
+# Day 54:
+# - Adds answer modes: short / detailed / sources
+# - Restores persistent help/examples
+# - Keeps narrative answer + source attribution
 
 from scripts.core import run_query_core, extract_top_result, open_result
 
@@ -12,12 +12,12 @@ INDEX_PATH = "memory/index/index.json"
 
 
 # =========================
-# HELP
+# HELP / MENU
 # =========================
 
 def show_help():
     """
-    Show examples so user knows what to type.
+    Always visible usage examples.
     """
     print("""
 PAIOS Examples:
@@ -25,6 +25,9 @@ PAIOS Examples:
 Search:
   find termination
   find payment terms
+  find termination mode=short
+  find termination mode=detailed
+  find termination mode=sources
 
 Top:
   top termination
@@ -43,8 +46,15 @@ Other:
 # =========================
 
 def parse_input(user_input):
+    """
+    Extract:
+    - intent (search/top/open)
+    - query
+    - mode (optional)
+    """
     text = user_input.lower().strip()
 
+    # Detect intent
     if text.startswith(("open", "show", "read")):
         intent = "open"
     elif text.startswith(("top", "best")):
@@ -52,17 +62,25 @@ def parse_input(user_input):
     else:
         intent = "search"
 
-    remove_words = [
-        "open", "show", "read",
-        "top", "best",
-        "find", "search",
-    ]
+    # Extract mode if present
+    mode = "detailed"
+    if "mode=" in text:
+        try:
+            mode = text.split("mode=")[1].split()[0]
+        except:
+            mode = "detailed"
+
+    # Remove keywords
+    remove_words = ["open", "show", "read", "top", "best", "find", "search"]
 
     query = text
     for word in remove_words:
         query = query.replace(word, "")
 
-    return intent, " ".join(query.split())
+    # Remove mode part from query
+    query = query.replace(f"mode={mode}", "")
+
+    return intent, " ".join(query.split()), mode
 
 
 def auto_refine(query):
@@ -72,7 +90,7 @@ def auto_refine(query):
 
 
 # =========================
-# SEMANTIC LOGIC
+# SEMANTIC ENGINE
 # =========================
 
 def classify_line(line):
@@ -80,10 +98,8 @@ def classify_line(line):
 
     if "terminate" in l or "termination" in l:
         return "Termination"
-
     if "liability" in l or "damages" in l:
         return "Liability"
-
     if "payment" in l:
         return "Payment"
 
@@ -96,7 +112,6 @@ def clean_lines(results):
 
     for r in results:
         path = r.get("summary_path")
-
         if not path:
             continue
 
@@ -149,17 +164,30 @@ def compress_group(lines, category):
             return "require payment 14 days in advance"
         return "include payment terms"
 
-    if category == "General":
-        return "include general agreement provisions"
-
     return None
 
 
 # =========================
-# ANSWER ENGINE
+# ANSWER BUILDER
 # =========================
 
-def generate_narrative_answer(results):
+def build_answer(pieces):
+    """
+    Build main sentence.
+    """
+    if not pieces:
+        return "No clear answer found."
+
+    if len(pieces) == 1:
+        return f"Contracts {pieces[0]}."
+
+    return "Contracts " + ", and ".join(pieces) + "."
+
+
+def generate_answer(results, mode):
+    """
+    Generate answer based on selected mode.
+    """
     if not results:
         print("\nNo answer available.\n")
         return
@@ -178,31 +206,30 @@ def generate_narrative_answer(results):
         if compressed:
             pieces.append(compressed)
 
-    if not pieces:
-        print("\nNo meaningful answer.\n")
-        return
-
-    answer = "Contracts typically " + ", and ".join(pieces) + "."
+    answer = build_answer(pieces)
 
     print("\n=== ANSWER ===")
-    print(answer)
+
+    # SHORT MODE
+    if mode == "short":
+        print(answer)
+
+    # DETAILED MODE (default)
+    elif mode == "detailed":
+        print(answer)
+        print(f"\nBased on {len(results)} document(s).")
+
+    # SOURCES MODE
+    elif mode == "sources":
+        print(answer)
+        print("\n--- Sources ---")
+        for r in results:
+            print(f"{r.get('file_name')} (score: {r.get('score')})")
+
+    else:
+        print(answer)
+
     print()
-
-
-# =========================
-# OPTIONAL DEBUG VIEW
-# =========================
-
-def print_results(results):
-    """
-    Optional: still available for debugging or transparency
-    """
-    if not results:
-        return
-
-    print("\n--- Sources ---")
-    for r in results:
-        print(f"{r.get('file_name')} (score: {r.get('score')})")
 
 
 # =========================
@@ -210,7 +237,7 @@ def print_results(results):
 # =========================
 
 def main():
-    print("PAIOS Answer Engine v1")
+    print("PAIOS Answer Engine v3")
     print("Type 'help' for examples.\n")
 
     show_help()
@@ -233,7 +260,7 @@ def main():
         if not user_input:
             continue
 
-        intent, query = parse_input(user_input)
+        intent, query, mode = parse_input(user_input)
 
         if not query:
             print("Missing query.\n")
@@ -250,8 +277,7 @@ def main():
         print(f"\nQuery: {full_query}")
 
         if intent == "search":
-            generate_narrative_answer(results)
-            print_results(results)  # optional visibility
+            generate_answer(results, mode)
 
         elif intent == "top":
             top = extract_top_result(results)
