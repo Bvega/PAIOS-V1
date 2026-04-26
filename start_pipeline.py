@@ -1,116 +1,158 @@
+# start_pipeline.py
+# ============================================
+# PAIOS Pipeline Entry Point
+# ============================================
+
 import os
-import json
+import sys
+import shutil
 from datetime import datetime
 
-from scripts.preprocess import process_file
-from scripts.metadata import generate_metadata
-from scripts.indexer import update_index
-from scripts.summarize import summarize_text
+
+# ============================================
+# Helper: Timestamp
+# ============================================
+
+def timestamp():
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
-def load_config():
-    with open("config/config.json", "r", encoding="utf-8") as f:
-        return json.load(f)
+# ============================================
+# Ensure Required Structure
+# ============================================
+
+def ensure_structure():
+    """
+    Ensure all required runtime folders exist.
+    This prevents indexer failures when folders are missing.
+    """
+    required_dirs = [
+        "memory",
+        "memory/processed",
+        "memory/index",
+        "outputs"
+    ]
+
+    for path in required_dirs:
+        os.makedirs(path, exist_ok=True)
 
 
-def log(message):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{timestamp}] {message}")
+# ============================================
+# Clean Runtime
+# ============================================
+
+def clean_runtime():
+    """
+    Remove runtime data for clean test runs.
+    """
+    for folder in ["memory", "outputs"]:
+        if os.path.exists(folder):
+            shutil.rmtree(folder)
+            print(f"[CLEAN] Removed {folder}/")
 
 
-def read_file_content(file_path):
+# ============================================
+# File Discovery
+# ============================================
+
+def get_txt_files(input_path):
+    txt_files = []
+
+    for root, _, files in os.walk(input_path):
+        for file_name in files:
+            if file_name.endswith(".txt"):
+                txt_files.append(os.path.join(root, file_name))
+
+    return txt_files
+
+
+# ============================================
+# Preprocessing Wrapper
+# ============================================
+
+def run_preprocessing(file_path):
+    """
+    Safe wrapper to support evolving preprocess module.
+    """
     try:
-        with open(file_path, "r", encoding="utf-8") as f:
-            return f.read()
-    except Exception:
-        return ""
+        from scripts.preprocess import preprocess_file
+        return preprocess_file(file_path)
+
+    except ImportError:
+        try:
+            from scripts.preprocess import process_file
+            return process_file(file_path)
+
+        except ImportError:
+            # fallback safe read
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                return f.read()
 
 
-def main():
-    config = load_config()
+# ============================================
+# Indexing
+# ============================================
 
-    inbox = "inbox"
-    raw_dir = "memory/raw"
-    processed_dir = "memory/processed"
-    summaries_dir = "memory/summaries"
-    supported_types = config["file_types"]["supported"]
-
-    os.makedirs(raw_dir, exist_ok=True)
-    os.makedirs(processed_dir, exist_ok=True)
-    os.makedirs(summaries_dir, exist_ok=True)
-
-    files = os.listdir(inbox)
-
-    log("PAIOS pipeline started")
-
-    if not files:
-        log("No files found in inbox")
+def run_indexing():
+    """
+    Run index builder.
+    """
+    try:
+        from scripts.indexer import update_index
         update_index()
-        log("Index updated")
-        log("PAIOS pipeline finished")
+        print(f"[{timestamp()}] Index updated")
+
+    except Exception as e:
+        print(f"[WARNING] Index update failed: {e}")
+
+
+# ============================================
+# Main Pipeline
+# ============================================
+
+def run_pipeline(input_path, clean=False):
+    print(f"[{timestamp()}] PAIOS pipeline started")
+
+    if clean:
+        clean_runtime()
+
+    # CRITICAL FIX: always rebuild structure after clean
+    ensure_structure()
+
+    if not os.path.exists(input_path):
+        print(f"[ERROR] Path not found: {input_path}")
         return
 
-    log(f"Files detected: {files}")
+    files = get_txt_files(input_path)
+    print(f"[{timestamp()}] Files detected: {len(files)}")
 
-    for file in files:
-        source_path = os.path.join(inbox, file)
+    if not files:
+        print(f"[WARNING] No .txt files found")
+        return
 
-        if not os.path.isfile(source_path):
-            log(f"Skipped non-file item: {file}")
-            continue
+    # Process files
+    for file_path in files:
+        try:
+            run_preprocessing(file_path)
+        except Exception as e:
+            print(f"[ERROR] Failed processing {file_path}: {e}")
 
-        _, ext = os.path.splitext(file)
+    # Build index
+    run_indexing()
 
-        if ext.lower() not in supported_types:
-            log(f"Skipped unsupported file: {file}")
-            continue
+    print(f"[{timestamp()}] PAIOS pipeline finished")
 
-        raw_destination = os.path.join(raw_dir, file)
 
-        if os.path.exists(raw_destination):
-            log(f"Duplicate file skipped: {file}")
-            continue
-
-        os.rename(source_path, raw_destination)
-        log(f"Moved file to raw: {file}")
-
-        processed_content = process_file(raw_destination)
-
-        if processed_content is None:
-            log(f"Processing returned no content: {file}")
-            continue
-
-        processed_filename = os.path.splitext(file)[0] + ".txt"
-        processed_path = os.path.join(processed_dir, processed_filename)
-
-        with open(processed_path, "w", encoding="utf-8") as f:
-            f.write(processed_content)
-
-        log(f"Processed file saved: {processed_filename}")
-
-        metadata = generate_metadata(raw_destination, ext)
-        metadata_path = processed_path.replace(".txt", ".meta.json")
-
-        with open(metadata_path, "w", encoding="utf-8") as f:
-            json.dump(metadata, f, indent=2)
-
-        log(f"Metadata saved: {os.path.basename(metadata_path)}")
-
-        content = read_file_content(processed_path)
-        summary = summarize_text(content)
-
-        summary_filename = processed_filename.replace(".txt", ".summary.txt")
-        summary_path = os.path.join(summaries_dir, summary_filename)
-
-        with open(summary_path, "w", encoding="utf-8") as f:
-            f.write(summary)
-
-        log(f"Summary saved: {summary_filename}")
-
-    update_index()
-    log("Index updated")
-    log("PAIOS pipeline finished")
-
+# ============================================
+# CLI Entry
+# ============================================
 
 if __name__ == "__main__":
-    main()
+    if len(sys.argv) < 2:
+        print("Usage: python3 start_pipeline.py <input_path> [--clean]")
+        sys.exit(1)
+
+    input_path = sys.argv[1]
+    clean_flag = "--clean" in sys.argv
+
+    run_pipeline(input_path, clean=clean_flag)
