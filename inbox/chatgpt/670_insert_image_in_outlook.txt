@@ -1,0 +1,1677 @@
+Title: Insert Image in Outlook
+Created: 2024-12-19 14:11:29
+Updated: 2024-12-20 16:25:46
+================================================================================
+
+USER:
+how do i insert an image in my e mail body in outlook
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+To insert an image into the body of an email in Outlook, follow these steps:
+
+### Outlook Desktop App
+1. **Create a New Email**:
+   - Open Outlook and click on **New Email** to compose a new message.
+
+2. **Position the Cursor**:
+   - Place the cursor where you want the image to appear in the email body.
+
+3. **Insert the Image**:
+   - Go to the **Insert** tab in the toolbar.
+   - Click **Pictures** and choose **This Device**.
+   - Browse to the image file on your computer and click **Insert**.
+
+4. **Resize and Adjust**:
+   - After inserting the image, click on it to resize or format it using the handles and the **Format** tab.
+
+### Outlook Web App
+1. **Create a New Email**:
+   - Open the Outlook Web App in your browser and click **New Message**.
+
+2. **Position the Cursor**:
+   - Place the cursor where you want the image.
+
+3. **Insert the Image**:
+   - Click the **Insert pictures inline** icon (it looks like a small picture).
+   - Browse for the image on your computer and upload it.
+
+4. **Adjust Settings**:
+   - Once the image is inserted, you can drag the corners to resize or adjust its placement.
+
+### Drag and Drop Method
+- Simply drag the image file from your file explorer and drop it into the email body. This works in both the desktop and web versions of Outlook.
+
+Let me know if you need further assistance!
+
+--------------------------------------------------------------------------------
+
+USER:
+good, how do i automate my christmas  bulk mail out of an excel file
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+To automate your Christmas bulk email using data from an Excel file, you can use **Microsoft Outlook and Excel VBA (Visual Basic for Applications)**. Here’s a step-by-step guide:
+
+---
+
+### Prerequisites:
+1. **Excel File**: Prepare your Excel file with the following columns:
+   - **Email Address** (e.g., Column `A`)
+   - **Name** (e.g., Column `B`) or other personalization fields like a custom message.
+   
+   Example:
+   | Email Address       | Name      | Custom Message                |
+   |---------------------|-----------|-------------------------------|
+   | john.doe@example.com| John      | Wishing you a joyous holiday!|
+
+2. **Outlook Installed**: Ensure Outlook is configured with your email account.
+
+---
+
+### Steps to Automate:
+
+#### 1. Create the Email Template (Optional):
+If you want to include a standard Christmas message, design and save a draft in Outlook:
+- Go to Outlook.
+- Create a new email and write your holiday message.
+- Save it as a draft.
+
+#### 2. Write a VBA Script in Excel:
+1. Open Excel and press `Alt + F11` to open the VBA editor.
+2. Go to **Insert** > **Module** to create a new module.
+3. Copy and paste the following code into the module:
+
+```vba
+Sub SendChristmasEmails()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim Name As String
+    Dim CustomMessage As String
+    Dim EmailBody As String
+    
+    ' Set the worksheet with the data
+    Set ws = ThisWorkbook.Sheets("Sheet1") ' Replace with your sheet name
+    
+    ' Create Outlook application object
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the rows in the Excel sheet
+    For i = 2 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        ' Read data from the Excel sheet
+        EmailAddress = ws.Cells(i, 1).Value
+        Name = ws.Cells(i, 2).Value
+        CustomMessage = ws.Cells(i, 3).Value
+        
+        ' Create the email
+        Set OutlookMail = OutlookApp.CreateItem(0)
+        With OutlookMail
+            .To = EmailAddress
+            .Subject = "Merry Christmas!"
+            .Body = "Dear " & Name & "," & vbNewLine & vbNewLine & _
+                    CustomMessage & vbNewLine & vbNewLine & _
+                    "Warm regards," & vbNewLine & _
+                    "Your Company/Name"
+            ' Use .HTMLBody if you want to include HTML content
+            '.HTMLBody = "<b>Dear " & Name & ",</b><br><br>" & CustomMessage
+            
+            .Display ' Use .Send to send directly
+        End With
+    Next i
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "Christmas emails have been created!", vbInformation
+End Sub
+```
+
+#### 3. Customize the Code:
+- Replace `"Sheet1"` with the name of your Excel sheet.
+- Modify the email subject, body, and signature as needed.
+- Use `.Send` instead of `.Display` to send the emails directly (after testing).
+
+---
+
+#### 4. Run the VBA Code:
+1. Close the VBA editor (`Alt + Q`) and return to Excel.
+2. Press `Alt + F8`, select `SendChristmasEmails`, and click **Run**.
+
+---
+
+### Tips:
+- **Test First**: Run the script on a test Excel file with a few email addresses before sending to your full list.
+- **Check Spam Filters**: Use a professional email tone and avoid excessive links or images.
+- **Backup**: Ensure your Outlook drafts and Excel file are backed up.
+
+Let me know if you'd like additional assistance or modifications to the code!
+
+--------------------------------------------------------------------------------
+
+USER:
+I have a christmas jpg card that i want it to be the body of the mail, how can we d that?
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+To include a Christmas JPG card as the body of the email in your bulk mail automation, you can modify the VBA script to use **HTMLBody** and embed the image in the email body. Here's how to do it:
+
+---
+
+### Steps to Embed the JPG Card:
+
+#### 1. Save the JPG Card in a Publicly Accessible Path
+- Save your Christmas JPG card to a location on your computer (e.g., `C:\Images\ChristmasCard.jpg`).
+
+---
+
+#### 2. Modify the VBA Script
+
+Here’s the updated script to include the image in the email body:
+
+```vba
+Sub SendChristmasEmailsWithImage()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim Name As String
+    Dim CustomMessage As String
+    Dim EmailBody As String
+    Dim ImagePath As String
+    
+    ' Path to the Christmas JPG card
+    ImagePath = "C:\Images\ChristmasCard.jpg" ' Update with your image path
+    
+    ' Set the worksheet with the data
+    Set ws = ThisWorkbook.Sheets("Sheet1") ' Replace with your sheet name
+    
+    ' Create Outlook application object
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the rows in the Excel sheet
+    For i = 2 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        ' Read data from the Excel sheet
+        EmailAddress = ws.Cells(i, 1).Value
+        Name = ws.Cells(i, 2).Value
+        CustomMessage = ws.Cells(i, 3).Value
+        
+        ' Create the email
+        Set OutlookMail = OutlookApp.CreateItem(0)
+        With OutlookMail
+            .To = EmailAddress
+            .Subject = "Merry Christmas!"
+            
+            ' HTMLBody with embedded image
+            .HTMLBody = "<html><body>" & _
+                        "<p>Dear " & Name & ",</p>" & _
+                        "<p>" & CustomMessage & "</p>" & _
+                        "<img src='cid:ChristmasCard'>" & _
+                        "<p>Warm regards,<br>Your Company/Name</p>" & _
+                        "</body></html>"
+            
+            ' Add the image as an attachment
+            Dim Attachment As Object
+            Set Attachment = .Attachments.Add(ImagePath)
+            Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "ChristmasCard"
+            
+            .Display ' Use .Send to send directly
+        End With
+    Next i
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "Christmas emails with the card have been created!", vbInformation
+End Sub
+```
+
+---
+
+### Explanation of the Script:
+1. **`ImagePath`**:
+   - Update the path of the Christmas card image (`C:\Images\ChristmasCard.jpg`).
+   
+2. **`HTMLBody`**:
+   - Inserts the image into the email using the `<img>` tag with `cid:ChristmasCard`. The `cid` is linked to the embedded image.
+
+3. **Attachment**:
+   - The image is added as an attachment and referenced in the email body using the `PropertyAccessor` to set the `Content-ID` as `ChristmasCard`.
+
+4. **Send or Display**:
+   - Use `.Display` to preview the email or `.Send` to send it directly.
+
+---
+
+### 3. Test the Script:
+1. Save the VBA script.
+2. Run it by pressing `Alt + F8` and selecting the macro.
+3. Check if the email contains the JPG card as the body.
+
+Let me know if you need further clarification!
+
+--------------------------------------------------------------------------------
+
+USER:
+my excel file configuration as follows
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Based on the column headers in your Excel file ("First Name", "Last Name", and "Email"), you can modify the VBA script to include the full name in the email and address each recipient personally.
+
+Here's the updated VBA script:
+
+---
+
+### Updated VBA Script
+
+```vba
+Sub SendChristmasEmailsWithImage()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim FirstName As String
+    Dim LastName As String
+    Dim FullName As String
+    Dim ImagePath As String
+    
+    ' Path to the Christmas JPG card
+    ImagePath = "C:\Images\ChristmasCard.jpg" ' Update this path
+    
+    ' Set the worksheet with the data
+    Set ws = ThisWorkbook.Sheets("Sheet1") ' Replace "Sheet1" with the actual sheet name
+    
+    ' Create Outlook application object
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the rows in the Excel sheet
+    For i = 2 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        ' Read data from the Excel sheet
+        FirstName = ws.Cells(i, 1).Value
+        LastName = ws.Cells(i, 2).Value
+        EmailAddress = ws.Cells(i, 3).Value
+        FullName = FirstName & " " & LastName
+        
+        ' Create the email
+        Set OutlookMail = OutlookApp.CreateItem(0)
+        With OutlookMail
+            .To = EmailAddress
+            .Subject = "Merry Christmas!"
+            
+            ' HTMLBody with embedded image
+            .HTMLBody = "<html><body>" & _
+                        "<p>Dear " & FullName & ",</p>" & _
+                        "<p>Wishing you a joyous and warm Christmas season!</p>" & _
+                        "<img src='cid:ChristmasCard'>" & _
+                        "<p>Best wishes,<br>Your Company/Name</p>" & _
+                        "</body></html>"
+            
+            ' Add the image as an attachment
+            Dim Attachment As Object
+            Set Attachment = .Attachments.Add(ImagePath)
+            Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "ChristmasCard"
+            
+            .Display ' Use .Send to send directly
+        End With
+    Next i
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "Christmas emails with the card have been created!", vbInformation
+End Sub
+```
+
+---
+
+### How It Works
+1. **Excel Data Parsing**:
+   - The script reads the **First Name**, **Last Name**, and **Email Address** from the columns.
+   - Constructs the recipient's full name (`FullName`) from the first and last names.
+
+2. **Embedded Image**:
+   - The JPG card is embedded using the `<img src="cid:ChristmasCard">` tag.
+
+3. **Preview or Send**:
+   - `.Display` shows the email for preview. Replace it with `.Send` to send emails automatically.
+
+---
+
+### Steps to Use:
+1. Update the image path in the script (`C:\Images\ChristmasCard.jpg`).
+2. Ensure your Excel file is open and matches the provided format.
+3. Press `Alt + F8`, select `SendChristmasEmailsWithImage`, and click **Run**.
+4. Test with a small set of email addresses before bulk sending.
+
+Let me know if you need further clarification or enhancements!
+
+--------------------------------------------------------------------------------
+
+USER:
+i have this error     ' Path to the Christmas JPG card
+    ImagePath = "C:\Images\ChristmasCard.jpg" ' Update this path
+    
+    ' Set the worksheet with the data
+    Set ws = ThisWorkbook.Sheets(Test_List) ' Replace "Sheet1" with the actual sheet name
+    
+    ' Create Outlook application object
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+The error likely occurs because `Test_List` is not enclosed in quotation marks, which is required for specifying a worksheet name in VBA. Worksheet names must be strings, and string literals in VBA need to be enclosed in double quotes (`"`).
+
+### Corrected Line:
+```vba
+Set ws = ThisWorkbook.Sheets("Test_List") ' Replace "Test_List" with the actual sheet name
+```
+
+Make sure you replace `"Test_List"` with the exact name of your sheet as it appears in the Excel workbook, including any spaces.
+
+---
+
+### Full Corrected Section:
+
+```vba
+' Path to the Christmas JPG card
+ImagePath = "C:\Images\ChristmasCard.jpg" ' Update this path
+
+' Set the worksheet with the data
+Set ws = ThisWorkbook.Sheets("Test_List") ' Replace "Test_List" with the actual sheet name
+
+' Create Outlook application object
+```
+
+---
+
+### Additional Tips:
+1. **Check the Sheet Name**:
+   - Double-check the name of the sheet in your Excel file.
+   - If the sheet name contains spaces or special characters, include them exactly as shown in the workbook.
+
+2. **Debugging**:
+   - If you’re unsure of the sheet name, you can use VBA to list all the sheet names in your workbook for verification:
+     ```vba
+     Sub ListSheetNames()
+         Dim ws As Worksheet
+         For Each ws In ThisWorkbook.Sheets
+             Debug.Print ws.Name
+         Next ws
+     End Sub
+     ```
+   - Run this script, and it will print all sheet names in the Immediate Window (`Ctrl + G` to view it in the VBA editor).
+
+Fix the sheet name and re-run your script. Let me know if you encounter any further issues!
+
+--------------------------------------------------------------------------------
+
+USER:
+i want this part to look like this with the exact sam information and format 
+"Rosa Vega 
+Sr. Director, Global Accounts
+HelmsBriscoe
+rvega@helmsbriscoe.com
+Phone: +1. 917.484.2952" 
+www.helmsbriscoe.com
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+To include this exact information and format as part of your email body, you can add it to the **HTMLBody** section of the VBA script. Here's how you can achieve it:
+
+### Updated Script
+```vba
+Sub SendChristmasEmailsWithSignature()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim FirstName As String
+    Dim LastName As String
+    Dim FullName As String
+    Dim ImagePath As String
+    
+    ' Path to the Christmas JPG card
+    ImagePath = "C:\Images\ChristmasCard.jpg" ' Update this path
+    
+    ' Set the worksheet with the data
+    Set ws = ThisWorkbook.Sheets("Test_List") ' Replace "Test_List" with the actual sheet name
+    
+    ' Create Outlook application object
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the rows in the Excel sheet
+    For i = 2 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        ' Read data from the Excel sheet
+        FirstName = ws.Cells(i, 1).Value
+        LastName = ws.Cells(i, 2).Value
+        EmailAddress = ws.Cells(i, 3).Value
+        FullName = FirstName & " " & LastName
+        
+        ' Create the email
+        Set OutlookMail = OutlookApp.CreateItem(0)
+        With OutlookMail
+            .To = EmailAddress
+            .Subject = "Merry Christmas!"
+            
+            ' HTMLBody with embedded image and formatted signature
+            .HTMLBody = "<html><body>" & _
+                        "<p>Dear " & FullName & ",</p>" & _
+                        "<p>Wishing you a joyous and warm Christmas season!</p>" & _
+                        "<img src='cid:ChristmasCard'><br><br>" & _
+                        "<p>Warm regards,</p>" & _
+                        "<p><b>Rosa Vega</b><br>" & _
+                        "Sr. Director, Global Accounts<br>" & _
+                        "HelmsBriscoe<br>" & _
+                        "<a href='mailto:rvega@helmsbriscoe.com'>rvega@helmsbriscoe.com</a><br>" & _
+                        "Phone: +1. 917.484.2952<br>" & _
+                        "<a href='https://www.helmsbriscoe.com'>www.helmsbriscoe.com</a></p>" & _
+                        "</body></html>"
+            
+            ' Add the image as an attachment
+            Dim Attachment As Object
+            Set Attachment = .Attachments.Add(ImagePath)
+            Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "ChristmasCard"
+            
+            .Display ' Use .Send to send directly
+        End With
+    Next i
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "Christmas emails with the card and signature have been created!", vbInformation
+End Sub
+```
+
+---
+
+### Key Updates:
+1. **Signature Section**:
+   - Added Rosa Vega's details in the format requested, including her title, company, email, phone, and website.
+   - Used `<b>` to bold her name and HTML links for her email and website.
+
+2. **HTML Formatting**:
+   - `<br>` is used for line breaks to mimic the exact format.
+   - Included a clickable email (`mailto:rvega@helmsbriscoe.com`) and a website link (`https://www.helmsbriscoe.com`).
+
+3. **Embedded Image**:
+   - The image is included as part of the email body using `cid:ChristmasCard`.
+
+---
+
+### Steps to Use:
+1. Update the `ImagePath` with the path to your Christmas JPG card.
+2. Ensure your Excel file is open and matches the expected format.
+3. Run the script (`Alt + F8` > select `SendChristmasEmailsWithSignature` > click **Run**).
+4. Preview the generated emails before sending.
+
+This will generate emails with the exact information and formatting you specified. Let me know if further adjustments are needed!
+
+--------------------------------------------------------------------------------
+
+USER:
+this image is the final  e mail body arrangement that is desired
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+To achieve this exact layout with the image and text in your email body, we need to embed the image at the top and format the text beneath it using HTML. Here's the updated VBA script to create this layout:
+
+---
+
+### VBA Script
+
+```vba
+Sub SendChristmasEmailsWithFinalLayout()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim FirstName As String
+    Dim LastName As String
+    Dim FullName As String
+    Dim ImagePath As String
+    
+    ' Path to the Christmas JPG card
+    ImagePath = "C:\Images\ChristmasCard.jpg" ' Update with your actual image path
+    
+    ' Set the worksheet with the data
+    Set ws = ThisWorkbook.Sheets("Test_List") ' Replace "Test_List" with the actual sheet name
+    
+    ' Create Outlook application object
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the rows in the Excel sheet
+    For i = 2 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        ' Read data from the Excel sheet
+        FirstName = ws.Cells(i, 1).Value
+        LastName = ws.Cells(i, 2).Value
+        EmailAddress = ws.Cells(i, 3).Value
+        FullName = FirstName & " " & LastName
+        
+        ' Create the email
+        Set OutlookMail = OutlookApp.CreateItem(0)
+        With OutlookMail
+            .To = EmailAddress
+            .Subject = "Happy Holidays!"
+            
+            ' HTMLBody with embedded image and formatted text
+            .HTMLBody = "<html><body>" & _
+                        "<div style='text-align: center; font-family: Arial, sans-serif;'>" & _
+                        "<img src='cid:ChristmasCard' alt='Happy Holidays' style='width: 400px;'><br><br>" & _
+                        "<p><b>Rosa Vega</b><br>" & _
+                        "Senior Director, Global Accounts<br>" & _
+                        "<img src='cid:HBLogo' alt='HelmsBriscoe' style='width: 200px;'><br>" & _
+                        "<a href='mailto:rvega@helmsbriscoe.com'>rvega@helmsbriscoe.com</a><br>" & _
+                        "Phone: +1. 917.484.2952<br>" & _
+                        "<a href='https://www.helmsbriscoe.com'>www.helmsbriscoe.com</a></p>" & _
+                        "</div>" & _
+                        "</body></html>"
+            
+            ' Add the main image as an attachment
+            Dim Attachment As Object
+            Set Attachment = .Attachments.Add(ImagePath)
+            Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "ChristmasCard"
+            
+            ' Add the logo as an attachment (update the logo path)
+            Dim LogoPath As String
+            LogoPath = "C:\Images\HBLogo.jpg" ' Replace with the path to the HelmsBriscoe logo
+            Dim LogoAttachment As Object
+            Set LogoAttachment = .Attachments.Add(LogoPath)
+            LogoAttachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "HBLogo"
+            
+            .Display ' Use .Send to send directly
+        End With
+    Next i
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "Christmas emails with the final layout have been created!", vbInformation
+End Sub
+```
+
+---
+
+### Instructions:
+1. **Update Image Paths**:
+   - Replace `C:\Images\ChristmasCard.jpg` with the path to your holiday image.
+   - Replace `C:\Images\HBLogo.jpg` with the path to the HelmsBriscoe logo image.
+
+2. **HTML Layout**:
+   - The `<div>` tag centers the content and ensures proper alignment.
+   - Images (`ChristmasCard` and `HBLogo`) are embedded in the email using `cid`.
+
+3. **Preview or Send**:
+   - Use `.Display` to preview the emails before sending.
+   - Replace `.Display` with `.Send` to send the emails directly.
+
+---
+
+### Testing:
+- Run the script on a small set of test data to verify the layout.
+- Ensure both images (holiday card and logo) are accessible at the specified paths.
+
+Let me know if you need further refinements!
+
+--------------------------------------------------------------------------------
+
+USER:
+iam doing a diferent approach i have an image of the final card to be enbedded with image and logo included here is the example
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+If you already have a single image with the entire content (holiday card, logo, and text) prepared, the process becomes much simpler. You just need to embed this single image in the email body.
+
+Here’s the streamlined VBA script:
+
+---
+
+### VBA Script for Single Embedded Image
+```vba
+Sub SendChristmasEmailsWithEmbeddedCard()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim FirstName As String
+    Dim LastName As String
+    Dim FullName As String
+    Dim ImagePath As String
+    
+    ' Path to the final card image
+    ImagePath = "C:\Images\FinalCard.jpg" ' Update with the path to your image
+    
+    ' Set the worksheet with the data
+    Set ws = ThisWorkbook.Sheets("Test_List") ' Replace "Test_List" with the actual sheet name
+    
+    ' Create Outlook application object
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the rows in the Excel sheet
+    For i = 2 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        ' Read data from the Excel sheet
+        FirstName = ws.Cells(i, 1).Value
+        LastName = ws.Cells(i, 2).Value
+        EmailAddress = ws.Cells(i, 3).Value
+        FullName = FirstName & " " & LastName
+        
+        ' Create the email
+        Set OutlookMail = OutlookApp.CreateItem(0)
+        With OutlookMail
+            .To = EmailAddress
+            .Subject = "Happy Holidays!"
+            
+            ' HTMLBody with the embedded image
+            .HTMLBody = "<html><body>" & _
+                        "<div style='text-align: center; font-family: Arial, sans-serif;'>" & _
+                        "<p>Dear " & FullName & ",</p>" & _
+                        "<img src='cid:FinalCard' alt='Holiday Card' style='width: 500px;'><br><br>" & _
+                        "</div>" & _
+                        "</body></html>"
+            
+            ' Add the image as an attachment
+            Dim Attachment As Object
+            Set Attachment = .Attachments.Add(ImagePath)
+            Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "FinalCard"
+            
+            .Display ' Use .Send to send directly
+        End With
+    Next i
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "Christmas emails with the final card have been created!", vbInformation
+End Sub
+```
+
+---
+
+### Steps to Use:
+1. **Update the `ImagePath`**:
+   - Replace `C:\Images\FinalCard.jpg` with the full path to the image file you uploaded (the one containing the card, logo, and text).
+
+2. **HTMLBody**:
+   - The image is embedded using `cid:FinalCard`. The email will reference this image as part of the email body.
+
+3. **Preview or Send**:
+   - Use `.Display` to preview each email before sending.
+   - Replace `.Display` with `.Send` to send the emails directly.
+
+---
+
+### Testing:
+- Run the script on test data to verify the email layout.
+- Ensure the image file path is correct and accessible.
+
+This script will send your emails with the final image embedded exactly as it appears in your example. Let me know if you need adjustments!
+
+--------------------------------------------------------------------------------
+
+USER:
+can we have in the personalize greeting only the first name?
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Yes, we can modify the personalized greeting to use only the first name. Here’s the updated script:
+
+---
+
+### Updated VBA Script for Greeting with First Name Only
+```vba
+Sub SendChristmasEmailsWithEmbeddedCard()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim FirstName As String
+    Dim ImagePath As String
+    
+    ' Path to the final card image
+    ImagePath = "C:\Images\FinalCard.jpg" ' Update with the path to your image
+    
+    ' Set the worksheet with the data
+    Set ws = ThisWorkbook.Sheets("Test_List") ' Replace "Test_List" with the actual sheet name
+    
+    ' Create Outlook application object
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the rows in the Excel sheet
+    For i = 2 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        ' Read data from the Excel sheet
+        FirstName = ws.Cells(i, 1).Value
+        EmailAddress = ws.Cells(i, 3).Value
+        
+        ' Create the email
+        Set OutlookMail = OutlookApp.CreateItem(0)
+        With OutlookMail
+            .To = EmailAddress
+            .Subject = "Happy Holidays!"
+            
+            ' HTMLBody with the embedded image
+            .HTMLBody = "<html><body>" & _
+                        "<div style='text-align: center; font-family: Arial, sans-serif;'>" & _
+                        "<p>Dear " & FirstName & ",</p>" & _
+                        "<img src='cid:FinalCard' alt='Holiday Card' style='width: 500px;'><br><br>" & _
+                        "</div>" & _
+                        "</body></html>"
+            
+            ' Add the image as an attachment
+            Dim Attachment As Object
+            Set Attachment = .Attachments.Add(ImagePath)
+            Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "FinalCard"
+            
+            .Display ' Use .Send to send directly
+        End With
+    Next i
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "Christmas emails with the final card and personalized greetings have been created!", vbInformation
+End Sub
+```
+
+---
+
+### Changes Made:
+1. **Greeting with First Name**:
+   - The greeting now uses only the `FirstName` column from your Excel file:
+     ```vba
+     "<p>Dear " & FirstName & ",</p>"
+     ```
+   
+2. **Personalized Email**:
+   - Each email will start with "Dear [FirstName],".
+
+3. **Excel File Compatibility**:
+   - The script assumes the first column (`Column A`) contains the first names and the third column (`Column C`) contains the email addresses.
+
+---
+
+### Steps to Use:
+1. Update the `ImagePath` to the path where your final card image is stored.
+2. Ensure your Excel file includes:
+   - Column A: **First Name**
+   - Column C: **Email Address**
+3. Run the script (`Alt + F8` > select `SendChristmasEmailsWithEmbeddedCard` > click **Run**).
+
+---
+
+### Example Output:
+For `First Name = Rosa`, the email will look like this:
+```
+Dear Rosa,
+
+[Holiday Card Image Here]
+
+```
+
+Let me know if you need any further adjustments!
+
+--------------------------------------------------------------------------------
+
+USER:
+perfect can we make the image to show 25% bigger in the body, and making sure it doesn't get out of boundary?
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+To make the image 25% larger in the email body while ensuring it doesn't get out of the boundary or distort the layout, you can adjust the **CSS style** for the image in the HTML. Here's how:
+
+---
+
+### Updated VBA Script with Enlarged Image
+```vba
+Sub SendChristmasEmailsWithEmbeddedCard()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim FirstName As String
+    Dim ImagePath As String
+    
+    ' Path to the final card image
+    ImagePath = "C:\Images\FinalCard.jpg" ' Update with the path to your image
+    
+    ' Set the worksheet with the data
+    Set ws = ThisWorkbook.Sheets("Test_List") ' Replace "Test_List" with the actual sheet name
+    
+    ' Create Outlook application object
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the rows in the Excel sheet
+    For i = 2 To ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+        ' Read data from the Excel sheet
+        FirstName = ws.Cells(i, 1).Value
+        EmailAddress = ws.Cells(i, 3).Value
+        
+        ' Create the email
+        Set OutlookMail = OutlookApp.CreateItem(0)
+        With OutlookMail
+            .To = EmailAddress
+            .Subject = "Happy Holidays!"
+            
+            ' HTMLBody with the embedded image
+            .HTMLBody = "<html><body>" & _
+                        "<div style='text-align: center; font-family: Arial, sans-serif;'>" & _
+                        "<p>Dear " & FirstName & ",</p>" & _
+                        "<img src='cid:FinalCard' alt='Holiday Card' style='width: 625px; max-width: 100%; height: auto;'><br><br>" & _
+                        "</div>" & _
+                        "</body></html>"
+            
+            ' Add the image as an attachment
+            Dim Attachment As Object
+            Set Attachment = .Attachments.Add(ImagePath)
+            Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "FinalCard"
+            
+            .Display ' Use .Send to send directly
+        End With
+    Next i
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "Christmas emails with enlarged images have been created!", vbInformation
+End Sub
+```
+
+---
+
+### Key Updates:
+1. **Image Size Increased by 25%**:
+   - Assuming the original width was 500px, it's increased to 625px (`500px * 1.25 = 625px`).
+
+2. **Responsive Design**:
+   - The `max-width: 100%` ensures the image does not overflow the boundaries of the email container.
+   - The `height: auto` keeps the aspect ratio intact to prevent distortion.
+
+3. **Customizable Size**:
+   - You can further adjust the size by changing the `width: 625px` value.
+
+---
+
+### Example:
+If your original image width was 500px, the email will now display the image at 625px, scaling proportionally.
+
+This ensures the image looks larger but doesn't break the layout or exceed the boundaries. Let me know if you'd like further adjustments!
+
+--------------------------------------------------------------------------------
+
+USER:
+is it posible to make  bulk send's by 10 units at the time, if it is posible explain the process before giving me the solution
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Yes, it is possible to send emails in **batches of 10 recipients at a time**. This involves iterating through the data in your Excel file, processing a specific number of rows (10 in this case), sending the emails for those rows, and then pausing or looping to handle the next batch.
+
+Here's how the process works:
+
+---
+
+### Process Overview:
+1. **Determine the Total Recipients**:
+   - Count the total number of rows (recipients) in your Excel file.
+
+2. **Batch Processing**:
+   - Divide the recipients into groups of 10.
+   - Process each group by iterating through only 10 rows per loop.
+
+3. **Pause Between Batches (Optional)**:
+   - If you want a delay between sending batches (e.g., to avoid being flagged by email servers), introduce a pause (e.g., 1-minute delay) after sending each batch.
+
+4. **Loop Through the Batches**:
+   - After completing one batch, move to the next group of 10 and repeat the process until all emails are sent.
+
+---
+
+### Code Logic:
+1. Use a `For` loop to go through all rows in the Excel sheet.
+2. Add a counter to track the number of emails sent in the current batch.
+3. When the counter reaches 10:
+   - Pause (if necessary) or proceed to the next batch.
+   - Reset the counter for the next batch.
+
+4. Stop when all rows are processed.
+
+---
+
+### Implementation:
+Now that you understand the process, I will provide the VBA solution for batch sending in groups of 10 emails. Let me know if you'd like me to proceed!
+
+--------------------------------------------------------------------------------
+
+USER:
+Can the from: mail be changed for another mail so the recipient knows the real sender, as far I am an assistance sending the bulks from my boss
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Yes, in Microsoft Outlook, you can send emails on behalf of another user (e.g., your boss), but this requires certain permissions to be set up by your organization's IT administrator. There are two primary ways to achieve this:
+
+---
+
+### 1. **Send on Behalf Of Permission**
+- If your boss grants you "Send on Behalf Of" permissions:
+  - The email will indicate **"Sent on behalf of [Boss's Name]"** in the From field.
+  - Example: "John Assistant on behalf of Jane Boss."
+
+### 2. **Send As Permission**
+- If your boss grants you "Send As" permissions:
+  - The email will appear as if it was sent directly from your boss's email.
+  - Example: "[Jane Boss]" in the From field, with no indication it was sent by you.
+
+Both permissions are configured by your IT administrator in your email system (e.g., Microsoft Exchange).
+
+---
+
+### Manual Setup in Outlook:
+Once the permissions are granted, you can select the sender email in Outlook manually or programmatically.
+
+1. **Manual Selection**:
+   - When composing a new email:
+     1. Click the **From** dropdown in the email composer.
+     2. Select your boss’s email address (it will appear in the dropdown if permissions are correctly configured).
+
+---
+
+### Automation via VBA:
+To automate this process in a bulk email script, the VBA code needs to include the `SentOnBehalfOfName` or `SendUsingAccount` property.
+
+1. **`SentOnBehalfOfName`**:
+   - Use this if you have "Send on Behalf Of" permissions.
+
+2. **`SendUsingAccount`**:
+   - Use this if your Outlook profile has access to multiple accounts (e.g., yours and your boss's).
+
+---
+
+### Batch Sending Script with Modified "From" Address:
+If permissions are properly configured, let me know, and I will adjust the batch email script to include these options!
+
+--------------------------------------------------------------------------------
+
+USER:
+for the batch process i have a total of 56 e mails, can the batch be processed in a way that if the last batch is less than ten then it will just send the rest and stop the process?, does it make sense?
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Yes, it makes perfect sense. The script can be structured to:
+1. Process emails in batches of 10.
+2. Handle the last batch separately, sending any remaining emails (even if fewer than 10).
+3. Stop the process once all emails are sent.
+
+---
+
+### How It Works:
+1. **Divide into Batches**:
+   - Iterate through the email list in increments of 10.
+   - For each batch, send emails to the recipients in that batch.
+
+2. **Check for the Last Batch**:
+   - Calculate how many recipients remain in the final batch.
+   - If fewer than 10 remain, process only those and stop.
+
+---
+
+### Implementation
+
+Here's the updated VBA script:
+
+```vba
+Sub SendEmailsInBatches()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim FirstName As String
+    Dim ImagePath As String
+    Dim BatchSize As Integer
+    Dim TotalEmails As Integer
+    Dim CurrentBatch As Integer
+    
+    ' Path to the final card image
+    ImagePath = "C:\Images\FinalCard.jpg" ' Update with your image path
+    
+    ' Set the worksheet with the data
+    Set ws = ThisWorkbook.Sheets("Test_List") ' Replace "Test_List" with the actual sheet name
+    
+    ' Define batch size
+    BatchSize = 10 ' Number of emails to send per batch
+    
+    ' Get total number of emails
+    TotalEmails = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row - 1 ' Assumes row 1 is headers
+    
+    ' Initialize Outlook application
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the batches
+    For CurrentBatch = 1 To TotalEmails Step BatchSize
+        ' Process each email in the current batch
+        For i = CurrentBatch To Application.Min(CurrentBatch + BatchSize - 1, TotalEmails)
+            ' Read data from the Excel sheet
+            FirstName = ws.Cells(i + 1, 1).Value ' Assumes data starts at row 2
+            EmailAddress = ws.Cells(i + 1, 3).Value
+            
+            ' Create the email
+            Set OutlookMail = OutlookApp.CreateItem(0)
+            With OutlookMail
+                .To = EmailAddress
+                .Subject = "Happy Holidays!"
+                
+                ' HTMLBody with the embedded image
+                .HTMLBody = "<html><body>" & _
+                            "<div style='text-align: center; font-family: Arial, sans-serif;'>" & _
+                            "<p>Dear " & FirstName & ",</p>" & _
+                            "<img src='cid:FinalCard' alt='Holiday Card' style='width: 625px; max-width: 100%; height: auto;'><br><br>" & _
+                            "</div>" & _
+                            "</body></html>"
+                
+                ' Add the image as an attachment
+                Dim Attachment As Object
+                Set Attachment = .Attachments.Add(ImagePath)
+                Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "FinalCard"
+                
+                .Display ' Use .Send to send directly
+            End With
+        Next i
+        
+        ' Optional: Pause between batches
+        Application.Wait (Now + TimeValue("0:00:10")) ' 10-second pause between batches
+    Next CurrentBatch
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "All emails have been sent in batches!", vbInformation
+End Sub
+```
+
+---
+
+### Explanation:
+1. **Batch Processing**:
+   - The outer loop increments by `BatchSize` (10) to process one batch at a time.
+   - The inner loop sends emails within the current batch.
+
+2. **Last Batch**:
+   - `Application.Min(CurrentBatch + BatchSize - 1, TotalEmails)` ensures the loop doesn’t exceed the total number of emails for the last batch.
+
+3. **Optional Pause**:
+   - A 10-second pause (`Application.Wait`) between batches can be added to avoid overwhelming email servers.
+
+4. **Total Emails**:
+   - `TotalEmails` dynamically calculates the number of rows in your Excel file to handle any list size.
+
+---
+
+### Example:
+If you have 56 emails:
+- The script will process 5 batches of 10 emails each (emails 1–50).
+- For the final batch, it will send the remaining 6 emails (emails 51–56).
+
+This ensures all emails are sent without errors or skipping recipients.
+
+Let me know if you need further clarification or enhancements!
+
+--------------------------------------------------------------------------------
+
+USER:
+i have two list in the same workbook , the worksheet's are, one is "C_List" which will be the final list and the "Test_List" that will be for testing, redo the VBA so i can choose from a dialog windows which of the availables worksheets to choose from, do you understand or need some more information?
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+I understand your request perfectly! You want a dialog box (input prompt) where you can select either `"C_List"` or `"Test_List"` to determine which worksheet to process for sending the emails. Here's how we'll handle it:
+
+---
+
+### Key Updates in the VBA Script:
+1. **Dialog Box for Sheet Selection**:
+   - A simple `InputBox` will ask the user to enter the worksheet name.
+   - The script will verify if the entered name matches one of the available worksheets (`"C_List"` or `"Test_List"`).
+   - If the user enters an invalid name, they will be prompted to try again.
+
+2. **Dynamic Worksheet Selection**:
+   - Once the correct worksheet is selected, the script will process that worksheet for sending emails.
+
+3. **Error Handling**:
+   - If the entered worksheet doesn't exist or isn't spelled correctly, the script will prompt the user until a valid sheet is entered.
+
+---
+
+### Updated VBA Script:
+```vba
+Sub SendEmailsWithWorksheetSelection()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim SheetName As String
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim FirstName As String
+    Dim ImagePath As String
+    Dim BatchSize As Integer
+    Dim TotalEmails As Integer
+    Dim CurrentBatch As Integer
+    
+    ' Path to the final card image
+    ImagePath = "C:\Images\FinalCard.jpg" ' Update with your image path
+    
+    ' Ask the user to choose a worksheet
+    Do
+        SheetName = InputBox("Enter the worksheet name to use (C_List or Test_List):", "Select Worksheet")
+        If SheetName = "" Then Exit Sub ' Exit if the user clicks Cancel
+        On Error Resume Next
+        Set ws = ThisWorkbook.Sheets(SheetName)
+        On Error GoTo 0
+        If Not ws Is Nothing Then Exit Do ' Exit the loop if a valid sheet is found
+        MsgBox "Invalid worksheet name. Please enter 'C_List' or 'Test_List'.", vbExclamation
+    Loop
+    
+    ' Define batch size
+    BatchSize = 10 ' Number of emails to send per batch
+    
+    ' Get total number of emails
+    TotalEmails = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row - 1 ' Assumes row 1 is headers
+    
+    ' Initialize Outlook application
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the batches
+    For CurrentBatch = 1 To TotalEmails Step BatchSize
+        ' Process each email in the current batch
+        For i = CurrentBatch To Application.Min(CurrentBatch + BatchSize - 1, TotalEmails)
+            ' Read data from the Excel sheet
+            FirstName = ws.Cells(i + 1, 1).Value ' Assumes data starts at row 2
+            EmailAddress = ws.Cells(i + 1, 3).Value
+            
+            ' Create the email
+            Set OutlookMail = OutlookApp.CreateItem(0)
+            With OutlookMail
+                .To = EmailAddress
+                .Subject = "Happy Holidays!"
+                
+                ' HTMLBody with the embedded image
+                .HTMLBody = "<html><body>" & _
+                            "<div style='text-align: center; font-family: Arial, sans-serif;'>" & _
+                            "<p>Dear " & FirstName & ",</p>" & _
+                            "<img src='cid:FinalCard' alt='Holiday Card' style='width: 625px; max-width: 100%; height: auto;'><br><br>" & _
+                            "</div>" & _
+                            "</body></html>"
+                
+                ' Add the image as an attachment
+                Dim Attachment As Object
+                Set Attachment = .Attachments.Add(ImagePath)
+                Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "FinalCard"
+                
+                .Display ' Use .Send to send directly
+            End With
+        Next i
+        
+        ' Optional: Pause between batches
+        Application.Wait (Now + TimeValue("0:00:10")) ' 10-second pause between batches
+    Next CurrentBatch
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "All emails have been sent in batches from the " & SheetName & " worksheet!", vbInformation
+End Sub
+```
+
+---
+
+### Key Features of This Script:
+1. **Dynamic Worksheet Selection**:
+   - A dialog box (`InputBox`) prompts the user to enter the worksheet name (`"C_List"` or `"Test_List"`).
+   - The script ensures only valid worksheet names are accepted.
+
+2. **Batch Processing**:
+   - Processes emails in batches of 10.
+   - Handles the last batch separately if fewer than 10 emails remain.
+
+3. **Error Handling**:
+   - If the user enters an invalid name, they are prompted again until a valid name is provided.
+
+4. **Optional Pause**:
+   - A 10-second pause between batches to avoid overwhelming email servers.
+
+---
+
+### Steps to Use:
+1. **Update the Image Path**:
+   - Replace `C:\Images\FinalCard.jpg` with the path to your holiday card image.
+
+2. **Run the Script**:
+   - Press `Alt + F8`, select `SendEmailsWithWorksheetSelection`, and click **Run**.
+
+3. **Select the Worksheet**:
+   - Enter either `"C_List"` or `"Test_List"` in the dialog box when prompted.
+
+4. **Send Emails in Batches**:
+   - The script will process the selected worksheet and send emails in groups of 10.
+
+---
+
+Let me know if you need further clarification or adjustments!
+
+--------------------------------------------------------------------------------
+
+USER:
+iwant to add in the window also the ability to wether .Display or .Send, do you understand?
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+User wants a VBA script with a dialog window to select a worksheet and choose between `.Display` or `.Send` for sending emails.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Yes, I understand! You want the dialog window to not only allow the user to select the worksheet but also choose whether the emails should be displayed for preview (`.Display`) or sent directly (`.Send`). Here's how we can implement it:
+
+---
+
+### Key Updates:
+1. **Additional Input for Display/Send**:
+   - Add a second `InputBox` to prompt the user to choose either "Display" or "Send".
+
+2. **Validation for Input**:
+   - Ensure the user enters a valid option ("Display" or "Send").
+   - If an invalid option is entered, prompt the user to try again.
+
+3. **Dynamic Email Action**:
+   - Based on the user's choice:
+     - Use `.Display` to preview emails.
+     - Use `.Send` to send emails directly.
+
+---
+
+### Updated VBA Script:
+```vba
+Sub SendEmailsWithWorksheetAndActionSelection()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim SheetName As String
+    Dim ActionChoice As String
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim FirstName As String
+    Dim ImagePath As String
+    Dim BatchSize As Integer
+    Dim TotalEmails As Integer
+    Dim CurrentBatch As Integer
+    
+    ' Path to the final card image
+    ImagePath = "C:\Images\FinalCard.jpg" ' Update with your image path
+    
+    ' Ask the user to choose a worksheet
+    Do
+        SheetName = InputBox("Enter the worksheet name to use (C_List or Test_List):", "Select Worksheet")
+        If SheetName = "" Then Exit Sub ' Exit if the user clicks Cancel
+        On Error Resume Next
+        Set ws = ThisWorkbook.Sheets(SheetName)
+        On Error GoTo 0
+        If Not ws Is Nothing Then Exit Do ' Exit the loop if a valid sheet is found
+        MsgBox "Invalid worksheet name. Please enter 'C_List' or 'Test_List'.", vbExclamation
+    Loop
+    
+    ' Ask the user to choose whether to display or send emails
+    Do
+        ActionChoice = InputBox("Enter 'Display' to preview emails or 'Send' to send emails directly:", "Select Action")
+        If ActionChoice = "" Then Exit Sub ' Exit if the user clicks Cancel
+        ActionChoice = LCase(ActionChoice) ' Convert to lowercase for easier comparison
+        If ActionChoice = "display" Or ActionChoice = "send" Then Exit Do
+        MsgBox "Invalid action. Please enter 'Display' or 'Send'.", vbExclamation
+    Loop
+    
+    ' Define batch size
+    BatchSize = 10 ' Number of emails to send per batch
+    
+    ' Get total number of emails
+    TotalEmails = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row - 1 ' Assumes row 1 is headers
+    
+    ' Initialize Outlook application
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the batches
+    For CurrentBatch = 1 To TotalEmails Step BatchSize
+        ' Process each email in the current batch
+        For i = CurrentBatch To Application.Min(CurrentBatch + BatchSize - 1, TotalEmails)
+            ' Read data from the Excel sheet
+            FirstName = ws.Cells(i + 1, 1).Value ' Assumes data starts at row 2
+            EmailAddress = ws.Cells(i + 1, 3).Value
+            
+            ' Create the email
+            Set OutlookMail = OutlookApp.CreateItem(0)
+            With OutlookMail
+                .To = EmailAddress
+                .Subject = "Happy Holidays!"
+                
+                ' HTMLBody with the embedded image
+                .HTMLBody = "<html><body>" & _
+                            "<div style='text-align: center; font-family: Arial, sans-serif;'>" & _
+                            "<p>Dear " & FirstName & ",</p>" & _
+                            "<img src='cid:FinalCard' alt='Holiday Card' style='width: 625px; max-width: 100%; height: auto;'><br><br>" & _
+                            "</div>" & _
+                            "</body></html>"
+                
+                ' Add the image as an attachment
+                Dim Attachment As Object
+                Set Attachment = .Attachments.Add(ImagePath)
+                Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "FinalCard"
+                
+                ' Send or Display based on user's choice
+                If ActionChoice = "display" Then
+                    .Display
+                ElseIf ActionChoice = "send" Then
+                    .Send
+                End If
+            End With
+        Next i
+        
+        ' Optional: Pause between batches
+        Application.Wait (Now + TimeValue("0:00:10")) ' 10-second pause between batches
+    Next CurrentBatch
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "All emails have been processed from the " & SheetName & " worksheet using the " & ActionChoice & " option!", vbInformation
+End Sub
+```
+
+---
+
+### Features:
+1. **Dynamic Worksheet Selection**:
+   - Prompts you to choose either `"C_List"` or `"Test_List"`.
+   - Verifies the worksheet exists and keeps prompting until a valid one is entered.
+
+2. **Dynamic Action Selection**:
+   - Prompts you to choose between `"Display"` (preview emails) and `"Send"` (send directly).
+   - Verifies the input and ensures only valid options are accepted.
+
+3. **Batch Processing**:
+   - Sends emails in groups of 10.
+   - Handles the last batch automatically if fewer than 10 emails remain.
+
+4. **Feedback**:
+   - Displays a message once all emails are processed, showing the selected worksheet and action.
+
+---
+
+### Steps to Use:
+1. **Update the Image Path**:
+   - Replace `C:\Images\FinalCard.jpg` with the full path to your holiday card image.
+
+2. **Run the Script**:
+   - Press `Alt + F8`, select `SendEmailsWithWorksheetAndActionSelection`, and click **Run**.
+
+3. **Follow the Prompts**:
+   - Enter the worksheet name (`C_List` or `Test_List`).
+   - Enter the action (`Display` or `Send`).
+
+4. **Emails Processed in Batches**:
+   - The script processes emails in groups of 10 based on your input.
+
+---
+
+Let me know if you need further adjustments!
+
+--------------------------------------------------------------------------------
+
+TOOL:
+Model set context updated.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Yes, I understand. You want the dialog box to also include the option to choose whether to preview emails (`.Display`) or send them directly (`.Send`). Here's how the updated script will work:
+
+---
+
+### Updates to the Script:
+1. **Add an Option for Sending Mode**:
+   - A second `InputBox` will prompt the user to choose either `Display` or `Send`.
+   - The script will validate the input to ensure it's either `Display` or `Send`.
+
+2. **Implement the User's Choice**:
+   - If the user chooses `Display`, the script will preview each email using `.Display`.
+   - If the user chooses `Send`, the script will send the emails directly using `.Send`.
+
+---
+
+### Updated VBA Script:
+```vba
+Sub SendEmailsWithWorksheetAndModeSelection()
+    Dim OutlookApp As Object
+    Dim OutlookMail As Object
+    Dim ws As Worksheet
+    Dim SheetName As String
+    Dim SendMode As String
+    Dim i As Integer
+    Dim EmailAddress As String
+    Dim FirstName As String
+    Dim ImagePath As String
+    Dim BatchSize As Integer
+    Dim TotalEmails As Integer
+    Dim CurrentBatch As Integer
+    
+    ' Path to the final card image
+    ImagePath = "C:\Images\FinalCard.jpg" ' Update with your image path
+    
+    ' Ask the user to choose a worksheet
+    Do
+        SheetName = InputBox("Enter the worksheet name to use (C_List or Test_List):", "Select Worksheet")
+        If SheetName = "" Then Exit Sub ' Exit if the user clicks Cancel
+        On Error Resume Next
+        Set ws = ThisWorkbook.Sheets(SheetName)
+        On Error GoTo 0
+        If Not ws Is Nothing Then Exit Do ' Exit the loop if a valid sheet is found
+        MsgBox "Invalid worksheet name. Please enter 'C_List' or 'Test_List'.", vbExclamation
+    Loop
+    
+    ' Ask the user to choose the sending mode
+    Do
+        SendMode = InputBox("Enter the mode (Display or Send):", "Select Sending Mode")
+        If SendMode = "" Then Exit Sub ' Exit if the user clicks Cancel
+        SendMode = LCase(Trim(SendMode)) ' Convert to lowercase for consistency
+        If SendMode = "display" Or SendMode = "send" Then Exit Do ' Valid modes
+        MsgBox "Invalid mode. Please enter 'Display' or 'Send'.", vbExclamation
+    Loop
+    
+    ' Define batch size
+    BatchSize = 10 ' Number of emails to send per batch
+    
+    ' Get total number of emails
+    TotalEmails = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row - 1 ' Assumes row 1 is headers
+    
+    ' Initialize Outlook application
+    On Error Resume Next
+    Set OutlookApp = GetObject(, "Outlook.Application")
+    If OutlookApp Is Nothing Then
+        Set OutlookApp = CreateObject("Outlook.Application")
+    End If
+    On Error GoTo 0
+    
+    ' Loop through the batches
+    For CurrentBatch = 1 To TotalEmails Step BatchSize
+        ' Process each email in the current batch
+        For i = CurrentBatch To Application.Min(CurrentBatch + BatchSize - 1, TotalEmails)
+            ' Read data from the Excel sheet
+            FirstName = ws.Cells(i + 1, 1).Value ' Assumes data starts at row 2
+            EmailAddress = ws.Cells(i + 1, 3).Value
+            
+            ' Create the email
+            Set OutlookMail = OutlookApp.CreateItem(0)
+            With OutlookMail
+                .To = EmailAddress
+                .Subject = "Happy Holidays!"
+                
+                ' HTMLBody with the embedded image
+                .HTMLBody = "<html><body>" & _
+                            "<div style='text-align: center; font-family: Arial, sans-serif;'>" & _
+                            "<p>Dear " & FirstName & ",</p>" & _
+                            "<img src='cid:FinalCard' alt='Holiday Card' style='width: 625px; max-width: 100%; height: auto;'><br><br>" & _
+                            "</div>" & _
+                            "</body></html>"
+                
+                ' Add the image as an attachment
+                Dim Attachment As Object
+                Set Attachment = .Attachments.Add(ImagePath)
+                Attachment.PropertyAccessor.SetProperty "http://schemas.microsoft.com/mapi/proptag/0x3712001F", "FinalCard"
+                
+                ' Choose between .Display and .Send based on user input
+                If SendMode = "display" Then
+                    .Display
+                ElseIf SendMode = "send" Then
+                    .Send
+                End If
+            End With
+        Next i
+        
+        ' Optional: Pause between batches
+        Application.Wait (Now + TimeValue("0:00:10")) ' 10-second pause between batches
+    Next CurrentBatch
+    
+    ' Cleanup
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    MsgBox "All emails have been sent in " & SendMode & " mode from the " & SheetName & " worksheet!", vbInformation
+End Sub
+```
+
+---
+
+### How It Works:
+1. **Worksheet Selection**:
+   - The script prompts the user to enter either `"C_List"` or `"Test_List"`.
+   - It validates the input to ensure the entered worksheet exists.
+
+2. **Sending Mode Selection**:
+   - The user is prompted to enter either `Display` or `Send` (case-insensitive).
+   - The script ensures only valid options are accepted.
+
+3. **Batch Processing**:
+   - Emails are sent in batches of 10, with the last batch handling fewer recipients if necessary.
+
+4. **Send or Display**:
+   - Based on the user's input:
+     - `Display`: Emails are previewed.
+     - `Send`: Emails are sent directly.
+
+5. **Confirmation Message**:
+   - A final message confirms the completion of the process, including the selected worksheet and mode.
+
+---
+
+### Steps to Use:
+1. **Run the Script**:
+   - Press `Alt + F8`, select `SendEmailsWithWorksheetAndModeSelection`, and click **Run**.
+
+2. **Enter Worksheet Name**:
+   - Type `C_List` or `Test_List` in the dialog box.
+
+3. **Enter Sending Mode**:
+   - Type `Display` to preview emails or `Send` to send them directly.
+
+4. **Emails Processed**:
+   - Emails are sent or displayed in batches of 10, with a pause between batches.
+
+---
+
+Let me know if you need further refinements!
+
+--------------------------------------------------------------------------------
+

@@ -1,0 +1,675 @@
+Title: Recipe Discovery App Plan
+Created: 2025-06-20 08:49:39
+Updated: 2025-07-05 00:16:56
+================================================================================
+
+USER:
+#assignReactFlow , lets do the following assigment : "SBA
+Recipe Discovery App
+Overview
+For this project, you will build a client-side “Recipe Discovery” application. This project will serve as a comprehensive demonstration of your mastery of advanced React concepts. The application will allow users to browse recipes by category, search for specific recipes, view detailed recipe information, and manage a personal list of “favorite” recipes.
+
+You will use a free, public API for recipe data and implement a varietys of hooks, state management patterns, and routing solutions to create a feature-rich, single-page application (SPA).
+
+Time Allocation
+In-class time: 3.5 hours
+Outside of class: At instructor’s discretion
+Core Requirements
+You will build a Recipe Discovery application using the TheMealDB API (a free API, no key required).
+
+1. State Management & Data Fetching
+Use the useState and useEffect hooks to fetch and display data from the API.
+Your application should manage loading and error states gracefully, displaying appropriate UI indicators to the user (e.g., a loading spinner, an error message).
+2. Custom Hooks
+You must create and implement at least two custom hooks:
+
+useFetch (or similar): A generic custom hook for handling data fetching logic. It should manage the data, loading state, and error state. This hook will be used throughout your application to communicate with the API.
+useLocalStorage: A custom hook to synchronize a piece of state with the browser’s localStorage. This will be used to persist the user’s list of favorite recipes.
+3. Global State with Context API
+Create a FavoritesContext to manage the user’s list of favorite recipes globally.
+The context must provide:
+A list of favorite recipe IDs.
+A function to add a recipe to favorites.
+A function to remove a recipe from favorites.
+A function to check if a recipe is already in favorites.
+This context should use your useLocalStorage hook internally to persist the favorites list across browser sessions.
+4. Routing
+Your application must include the following pages and routing logic:
+
+Home Page (/):
+Displays a grid or list of all available recipe categories fetched from the API.
+Each category should be a link that navigates to its respective category page.
+Category Page (/category/[categoryName]):
+A dynamic route that displays all recipes belonging to the category specified in the URL (e.g., /category/Seafood).
+Each recipe shown should be a link to its detailed recipe page.
+Recipe Detail Page (/recipe/[recipeId]):
+A dynamic route that fetches and displays the full details for a single recipe (image, ingredients, instructions, etc.).
+This page must include a button to “Add to Favorites” or “Remove from Favorites”. The button’s state and action should be handled by your FavoritesContext.
+Favorites Page (/favorites):
+Displays a list of all recipes that the user has marked as a favorite.
+If the user has no favorites, this page should display a message prompting them to browse and add some.
+Search Functionality:
+A search bar, likely in a shared Navbar, that allows users to search for recipes by name.
+Submitting a search should navigate the user to a search results page (e.g., /search?query=Arrabiata). This page will display the results of the search query.
+5. Components & UI
+Create reusable, well-styled components (e.g., RecipeCard, Navbar, Spinner, ErrorMessage).
+The application should be visually appealing and responsive. Use of a CSS framework, CSS-in-JS, or CSS Modules is up to you.
+TheMealDB API Endpoints
+The following endpoints are available for use, but are only examples. You will need to explore the API documentation  and use the endpoints that best fit the needs of your application.
+
+List all categories: https://www.themealdb.com/api/json/v1/1/categories.php
+Filter by category: https://www.themealdb.com/api/json/v1/1/filter.php?c=Seafood
+Lookup full recipe details by ID: https://www.themealdb.com/api/json/v1/1/lookup.php?i=52772
+Search meal by name: https://www.themealdb.com/api/json/v1/1/search.php?s=Arrabiata
+Submission Guidelines
+GitHub Repository: A link to a public GitHub repository containing the complete source code for your project.
+README.md: The repository must include a README.md file that contains:
+A brief description of the application and its features.
+Instructions on how to install dependencies and run the project locally.
+Reflection: A short section in your README.md or in a separate REFLECTION.md file detailing:
+The most challenging part of the project for you.
+A brief explanation of a design decision you made (e.g., why you structured a hook a certain way, how you decided to manage a piece of state)."
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+{
+  "name": "recipe-discovery-app-plan",
+  "type": "code/react",
+  "content": "// === Project: Recipe Discovery App ===\n\n// === 1. Project Setup ===\n// Create base project with Vite + React + TypeScript\n// > npm create vite@latest recipe-discovery-app --template react-ts\n// > cd recipe-discovery-app\n// > npm install\n// > npm install react-router-dom\n\n// === 2. Folder Structure ===\n// /src\n// ├── api/\n// │   └── mealDB.ts              // API fetch helpers\n// ├── components/\n// │   ├── Navbar.tsx\n// │   ├── Spinner.tsx\n// │   ├── ErrorMessage.tsx\n// │   └── RecipeCard.tsx\n// ├── context/\n// │   └── FavoritesContext.tsx   // Global context for favorites\n// ├── hooks/\n// │   ├── useFetch.ts\n// │   └── useLocalStorage.ts\n// ├── pages/\n// │   ├── Home.tsx\n// │   ├── Category.tsx\n// │   ├── RecipeDetail.tsx\n// │   ├── Favorites.tsx\n// │   └── SearchResults.tsx\n// ├── App.tsx\n// ├── main.tsx\n// └── index.css\n\n// === 3. Routing Setup (App.tsx) ===\nimport { BrowserRouter as Router, Routes, Route } from 'react-router-dom';\nimport Home from './pages/Home';\nimport Category from './pages/Category';\nimport RecipeDetail from './pages/RecipeDetail';\nimport Favorites from './pages/Favorites';\nimport SearchResults from './pages/SearchResults';\nimport Navbar from './components/Navbar';\n\nfunction App() {\n  return (\n    <Router>\n      <Navbar />\n      <Routes>\n        <Route path=\"/\" element={<Home />} />\n        <Route path=\"/category/:categoryName\" element={<Category />} />\n        <Route path=\"/recipe/:recipeId\" element={<RecipeDetail />} />\n        <Route path=\"/favorites\" element={<Favorites />} />\n        <Route path=\"/search\" element={<SearchResults />} />\n      </Routes>\n    </Router>\n  );\n}\n\nexport default App;\n\n// === 4. FavoritesContext (context/FavoritesContext.tsx) ===\n// Provides global state for managing favorite recipes\n\n// === 5. useFetch Hook (hooks/useFetch.ts) ===\n// Generic hook to fetch data with loading & error state\n\n// === 6. useLocalStorage Hook (hooks/useLocalStorage.ts) ===\n// Persists favorite recipe IDs across sessions\n\n// === 7. API Service (api/mealDB.ts) ===\n// Exports functions to call endpoints like:\n// - getCategories()\n// - getRecipesByCategory(category)\n// - getRecipeDetails(id)\n// - searchRecipes(query)\n\n// === 8. Pages ===\n// - Home.tsx: shows all recipe categories\n// - Category.tsx: shows recipes by category\n// - RecipeDetail.tsx: shows full recipe info + Add/Remove Favorite button\n// - Favorites.tsx: shows all favorited recipes\n// - SearchResults.tsx: search by name from navbar input\n\n// === 9. Components ===\n// - Navbar with search bar and link to /favorites\n// - Spinner (loading indicator)\n// - ErrorMessage (error state)\n// - RecipeCard (shows basic recipe info + link)\n\n// === 10. Styling ===\n// Can use CSS Modules or Tailwind CSS\n// Ensure responsive layout and clean UX/UI\n\n// === 11. README.md ===\n// - Project overview\n// - Setup instructions\n// - Reflection section with challenges and design decisions\n\n// === 12. GitHub Submission ===\n// - Commit regularly with meaningful messages\n// - Push to public repo\n// - Include README.md with all details"
+}
+
+--------------------------------------------------------------------------------
+
+TOOL:
+Successfully created text document 'Recipe-discovery-app-plan' which will be referenced in all future messages with the unique identifier textdoc_id: '685558fb391c81918437b67af22a5ec1'
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+✅ Blueprint created for the **Recipe Discovery App** assignment.  
+Includes: structure, routing, context, hooks, API, and components.
+
+Next steps:
+1. Do you want to start coding the project right away?
+2. Or would you like me to generate the base files (hooks, context, pages, etc.) for copy-paste into your Vite project?
+3. Tailwind or CSS Modules for styling?
+
+Let me know how you want to proceed.
+
+--------------------------------------------------------------------------------
+
+USER:
+this is a begineer project with educational intent, lets do an step by step implementation where the user learns to do the project folder the needed scafolding, install all the needed dependencies, etc. do you understand? respond yes or no
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Yes.
+
+--------------------------------------------------------------------------------
+
+USER:
+ok suggest the workflow for my approval and lets start
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here is the proposed **beginner-friendly educational workflow** for building the **Recipe Discovery App** step by step. Each stage will include:
+
+- **Instructions**
+- **File/folder creation**
+- **Code examples**
+- **Explanation of concepts**
+- **Git commit message**
+
+---
+
+### 🔧 **STEP-BY-STEP WORKFLOW**
+
+#### ✅ Stage 1: Project Initialization
+- Set up project with Vite + React + TypeScript.
+- Install required dependencies.
+- Set up folder structure scaffold.
+- Create placeholder files and basic routing.
+
+#### ✅ Stage 2: Basic Routing and Layout
+- Implement React Router.
+- Create basic page components: Home, Category, RecipeDetail, Favorites, SearchResults.
+- Build and test navigation.
+
+#### ✅ Stage 3: Create Custom Hooks
+- `useFetch` to handle API calls.
+- `useLocalStorage` to persist data.
+
+#### ✅ Stage 4: API Integration
+- Create a utility to call TheMealDB API.
+- Load and display categories on the homepage.
+
+#### ✅ Stage 5: Category Page
+- Use dynamic route to display recipes by category.
+- Link each recipe to its detail page.
+
+#### ✅ Stage 6: Recipe Detail Page
+- Display full recipe details.
+- Add/remove from favorites using context.
+
+#### ✅ Stage 7: Global Favorites Context
+- Create and configure FavoritesContext.
+- Provide global access to favorites state.
+- Use `useLocalStorage` to persist it.
+
+#### ✅ Stage 8: Favorites Page
+- Show all favorite recipes.
+- Allow removing from favorites.
+
+#### ✅ Stage 9: Search Functionality
+- Add search bar to Navbar.
+- Implement results page.
+
+#### ✅ Stage 10: Reusable Components & Styling
+- Build: `RecipeCard`, `Navbar`, `Spinner`, `ErrorMessage`.
+- Style the app using Tailwind CSS.
+
+#### ✅ Stage 11: README & Reflection
+- Add project description, instructions, and reflection notes.
+- Push to GitHub with commits for each stage.
+
+---
+
+Let me know if you'd like to:
+- Approve this plan as is ✅
+- Modify any stage 🛠️
+- Add or remove parts ✂️
+
+Once approved, we’ll begin with **Stage 1: Project Initialization.**
+
+--------------------------------------------------------------------------------
+
+USER:
+check i have this issue deployimd in netlify :  The Netlify deploy errored, with the following guidance provided:
+
+**Diagnosis:**
+The build is failing during the stage of installing dependencies. The error is `npm error code EJSONPARSE` which indicates an issue with parsing the `package.json` file.
+
+**Solution:**
+1. Verify the `package.json` file in the repository is valid JSON format without any syntax errors.
+2. Check for any non-whitespace characters or errors around line 32, column 1 as mentioned in the error message.
+3. Make sure there are no trailing commas or other syntax mistakes in the `package.json` file.
+4. Once the `package.json` file is corrected, trigger the build again to ensure successful dependency installation.
+
+The relevant error logs are:
+
+Line 0: build-image version: 9d5e089ad8ecaafb0161bb0f3dc3590dda973c71 (noble)
+Line 1: buildbot version: 9d5e089ad8ecaafb0161bb0f3dc3590dda973c71
+Line 2: Fetching cached dependencies
+Line 3: Failed to fetch cache, continuing with build
+Line 4: Starting to prepare the repo for build
+Line 5: No cached dependencies found. Cloning fresh repo
+Line 6: git clone --filter=blob:none https://github.com/Bvega/recipe-discovery-app-fresh
+Line 7: Preparing Git Reference refs/heads/main
+Line 8: Starting to install dependencies
+Line 9: Using PHP version
+Line 10: v22.17.0 is already installed.
+Line 11: Failed during stage 'Install dependencies': dependency_installation script returned non-zero exit code: 1
+Line 12: Now using node v22.17.0 (npm v10.9.2)
+Line 13: Enabling Node.js Corepack
+Line 14: Started restoring cached build plugins
+Line 15: Finished restoring cached build plugins
+Line 16: Started restoring cached corepack dependencies
+Line 17: Finished restoring cached corepack dependencies
+Line 18: No npm workspaces detected
+Line 19: Started restoring cached node modules
+Line 20: Finished restoring cached node modules
+Line 21: Installing npm packages using npm version 10.9.2
+Line 22: npm error code EJSONPARSE
+Line 23: npm error path /opt/build/repo/package.json
+Line 24: npm error JSON.parse Unexpected non-whitespace character after JSON at position 748 (line 32 column 1) while parsing near "...te
+Line 25: npm error JSON.parse Failed to parse JSON data.
+Line 26: npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript.
+Line 27: npm error A complete log of this run can be found in: /opt/buildhome/.npm/_logs/2025-06-28T01_44_34_545Z-debug-0.log
+Line 28: Error during npm install
+Line 29: Failing build: Failed to install dependencies
+Line 30: Finished processing build request in 4.515s
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Your Netlify build is failing because your `package.json` file has **invalid JSON syntax**, specifically on **line 32, column 1**.
+
+---
+
+### ✅ **How to Fix It**
+
+#### 1. **Open your `package.json` file**  
+Look around **line 32** and check for:
+- Trailing commas
+- Extra characters (e.g., `}` followed by something unexpected)
+- Unquoted keys
+- Comments (not allowed in JSON)
+
+#### 2. **Use a JSON validator**
+Paste your entire `package.json` into:  
+[https://jsonlint.com](https://jsonlint.com)  
+It will show you exactly what’s wrong and where.
+
+---
+
+### 🔧 Example of a Common Mistake
+
+❌ Incorrect:
+```json
+{
+  "name": "recipe-discovery-app",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+  } // <- ❌ this comma after last item is invalid in JSON
+}
+```
+
+✅ Correct:
+```json
+{
+  "name": "recipe-discovery-app",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  }
+}
+```
+
+---
+
+### 🔁 After Fixing:
+1. Save the corrected `package.json`
+2. Commit and push changes:
+```bash
+git add package.json
+git commit -m "Fix JSON syntax error in package.json"
+git push
+```
+3. Re-deploy on Netlify
+
+---
+
+Would you like to paste your current `package.json` content here for a direct fix?
+
+--------------------------------------------------------------------------------
+
+USER:
+here is the file check. :" {
+  "name": "recipe-discovery-app",
+  "version": "0.0.0",
+  "private": true,
+  "homepage": "https://<username>.github.io/<repo-name>",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.6.0",
+    "eslint": "^9.29.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "gh-pages": "^6.3.0",
+    "globals": "^16.2.0",
+    "tailwindcss": "^4.1.10",
+    "postcss": "^8.4.21",
+    "autoprefixer": "^10.4.14",
+    "vite": "^6.3.5"
+  }
+} "
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Your `package.json` is almost valid, but it has **one invalid placeholder** that causes the `EJSONPARSE` error:
+
+```json
+"homepage": "https://<username>.github.io/<repo-name>"
+```
+
+### ❌ Problem:
+JSON does **not allow angle brackets (`< >`)** or template placeholders like that. This causes a **parse error**.
+
+---
+
+### ✅ Fixed Version:
+Replace the `homepage` line with a real URL **or remove it** if you're not deploying to GitHub Pages.
+
+```json
+{
+  "name": "recipe-discovery-app",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.6.0",
+    "eslint": "^9.29.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "gh-pages": "^6.3.0",
+    "globals": "^16.2.0",
+    "tailwindcss": "^4.1.10",
+    "postcss": "^8.4.21",
+    "autoprefixer": "^10.4.14",
+    "vite": "^6.3.5"
+  }
+}
+```
+
+Or if you want to keep it for GitHub Pages:
+
+```json
+"homepage": "https://Bvega.github.io/recipe-discovery-app-fresh"
+```
+
+---
+
+### ✅ Steps to Fix & Redeploy:
+1. Update your `package.json` with the fixed content.
+2. Save and commit the changes:
+```bash
+git add package.json
+git commit -m "Fix EJSONPARSE error in package.json"
+git push
+```
+3. Retry deployment on Netlify.
+
+Let me know if you'd like this corrected version as a `.json` file to download.
+
+--------------------------------------------------------------------------------
+
+USER:
+do the copy and paste version
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here is your **fixed `package.json`** ready for **copy and paste**:
+
+```json
+{
+  "name": "recipe-discovery-app",
+  "version": "0.0.0",
+  "private": true,
+  "homepage": "https://Bvega.github.io/recipe-discovery-app-fresh",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.6.0",
+    "eslint": "^9.29.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "gh-pages": "^6.3.0",
+    "globals": "^16.2.0",
+    "tailwindcss": "^4.1.10",
+    "postcss": "^8.4.21",
+    "autoprefixer": "^10.4.14",
+    "vite": "^6.3.5"
+  }
+}
+```
+
+You can now:
+1. Overwrite your current `package.json` with this.
+2. Run:
+```bash
+npm install
+```
+3. Push the change:
+```bash
+git add package.json
+git commit -m "Fix homepage JSON syntax for Netlify build"
+git push
+```
+4. Trigger a fresh deploy on Netlify.
+
+Let me know when you're ready to continue with **Stage 1** of the project workflow.
+
+--------------------------------------------------------------------------------
+
+USER:
+i have not commited any changes and i want to keep the original github status as far it has not been changed , how can we do that
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+To fix the `package.json` locally **without affecting the GitHub repo history**, follow this exact plan:
+
+---
+
+### ✅ **Option A: Local Fix Without Committing**
+
+1. **Make changes locally**
+   - Overwrite `package.json` with the fixed version above.
+
+2. **Install dependencies again (local test)**:
+   ```bash
+   npm install
+   ```
+
+3. **Deploy to Netlify**:
+   - You can trigger a manual deploy from your local copy (if using Netlify CLI or linked directory).
+   - OR just use Netlify’s UI: drag and drop your `/dist` folder after running:
+     ```bash
+     npm run build
+     ```
+
+4. **Restore original state** (if needed):
+   ```bash
+   git checkout package.json
+   ```
+
+This reverts the file to the original Git-tracked version.
+
+---
+
+### ✅ **Option B: Use `.gitignore` Temporary Hack**
+
+If you want to test **without risk of accidentally committing**, you can ignore `package.json` temporarily:
+
+1. Add this line to `.gitignore`:
+   ```
+   package.json
+   ```
+
+2. Now edit `package.json`, test, deploy, etc.
+
+3. Once you're done, **remove** `package.json` from `.gitignore` and discard local changes:
+   ```bash
+   git checkout -- package.json
+   ```
+
+---
+
+### 🧠 Tip
+
+You can also stash changes instead of committing:
+
+```bash
+git stash push -m "temp fix for Netlify deploy"
+```
+
+Then return to original state:
+```bash
+git stash pop
+```
+
+---
+
+Let me know which way you'd like to proceed and I’ll guide you through it live.
+
+--------------------------------------------------------------------------------
+
+USER:
+i am having this issue please help :The Netlify build is failing due to a malformed `package.json`. Here’s how to fix it:
+
+---
+
+### ✅ Step-by-Step Fix:
+
+1. **Open `package.json`** in your project root.
+
+2. **Validate JSON Format**:
+
+   * Use an online validator like: [https://jsonlint.com](https://jsonlint.com)
+   * Or validate locally via CLI:
+
+     ```bash
+     cat package.json | jq empty
+     ```
+
+     If you don’t have `jq`, install it or stick to online tools.
+
+3. **Common Fixes to Look for**:
+
+   * **Trailing commas**:
+
+     ```json
+     "scripts": {
+       "start": "vite",
+     } ← ❌ Invalid
+     ```
+   * **Unquoted keys** or values.
+   * **Mismatched braces or brackets**.
+   * **Line 32** is a clue from the Netlify error. Go directly there and check for syntax errors.
+
+4. **Re-save file using UTF-8 (without BOM)** in your editor.
+
+5. **Example of a Correct `package.json`** (truncated):
+
+   ```json
+   {
+     "name": "recipe-discovery-app",
+     "version": "1.0.0",
+     "scripts": {
+       "dev": "vite",
+       "build": "vite build",
+       "preview": "vite preview"
+     },
+     "dependencies": {
+       "react": "^18.2.0",
+       "react-dom": "^18.2.0"
+     }
+   }
+   ```
+
+6. **Commit the fix** and push:
+
+   ```bash
+   git add package.json
+   git commit -m "Fix: corrected JSON syntax in package.json"
+   git push origin main
+   ```
+
+7. **Re-trigger Netlify build** from the Netlify dashboard or wait for auto-build.
+
+---
+
+If you want me to verify the file, paste your full `package.json` here. I’ll spot and correct the syntax directly. "
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+You’re repeating the same error: the placeholder in this line is **not valid JSON**:
+
+```json
+"homepage": "https://<username>.github.io/<repo-name>"
+```
+
+JSON **does not allow** angle brackets or comments.
+
+---
+
+### ✅ Corrected `package.json`
+
+Copy and paste the **fully valid version** below:
+
+```json
+{
+  "name": "recipe-discovery-app",
+  "version": "0.0.0",
+  "private": true,
+  "homepage": "https://Bvega.github.io/recipe-discovery-app-fresh",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.6.0",
+    "eslint": "^9.29.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
+    "gh-pages": "^6.3.0",
+    "globals": "^16.2.0",
+    "tailwindcss": "^4.1.10",
+    "postcss": "^8.4.21",
+    "autoprefixer": "^10.4.14",
+    "vite": "^6.3.5"
+  }
+}
+```
+
+---
+
+### 🧼 To fix locally without committing:
+
+1. Replace the content of your `package.json` with the one above.
+2. In your terminal:
+   ```bash
+   npm install
+   npm run build
+   ```
+3. On Netlify:  
+   - Go to your site > **Deploys** tab  
+   - Click **Trigger deploy > Deploy site**
+
+---
+
+If you want me to generate a `.json` download with the fix, I can do it immediately. Let me know.
+
+--------------------------------------------------------------------------------
+

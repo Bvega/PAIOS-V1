@@ -1,0 +1,751 @@
+Title: API Data Transformation Tasks
+Created: 2025-07-09 11:04:34
+Updated: 2025-07-09 11:57:41
+================================================================================
+
+USER:
+#assignReactflow lest do this activity : Activities
+Activity 1: Build a Data Transformer
+Create an Express route GET /api/comments.
+Fetch the list of all comments from https://jsonplaceholder.typicode.com/comments.
+Instead of sending the full objects, transform the data into an array of strings, where each string is in the format "<email> commented: <name>".
+Implement try...catch for error handling.
+Activity 2: Robust Error Proxy
+Create another route: GET /api/users/:id.
+Fetch a single user from https://jsonplaceholder.typicode.com/users/:id.
+If the external API responds with a 404, your server should respond with a 404 and a JSON object { "error": "User not found" }.
+If the external API responds with any other error (e.g., 500), your server should respond with a 502 Bad Gateway status and a message.
+If the request is successful, send the user data back to the client.
+
+--------------------------------------------------------------------------------
+
+TOOL:
+The file contents provided above are truncated/partial snippets. The complete content for these files IS accessible via querying.
+
+If the user asks a question related to these files, and the provided snippets do not clearly answer it, you **MUST** use the `file_search` tool to search the full document contents before responding.
+
+## How to invoke the file_search tool
+If the user's query isn't sufficiently answered by the provided snippets, parsed text, or images, you should invoke `file_search.msearch`.
+To search the full content of the available files, you **must** send one message with recipient `to=file_search.msearch` in the analysis channel. Your message should be structured exactly as follows:
+```
+{
+  'queries': ['Example query 1', 'Example query 2']  // List of up to five queries to search for.
+}
+```
+
+Carefully balance the number of `file_search` calls and the quality of your response with the latency incurred by `file_search` calls.
+
+Important guidelines for query formatting:
+- Your message must be a valid JSON object. Do not include any extraneous text, backticks, markdown formatting, or comments beyond what is shown.
+- The `queries` field must be a list of strings.
+- One of the queries **MUST** exactly match the user's original question, but stripped of any extraneous details, and with ambiguous references clearly resolved using context from the conversation. It **MUST** be a complete sentence.
+- Even if you suspect the user meant something else, one query **MUST** still be their original question.
+
+## How to handle results from file_search
+The file search tool will respond with the relevant search results from the full files. After you receive these results:
+- Carefully evaluate each result to determine its relevance and quality.
+- Use the high-quality and relevant results to inform your answer to the user's question.
+- When possible, reuse information from prior file_search results and avoid repeating identical queries.
+
+## Tool usage instructions and ordering
+When the user asks a question, carefully consider whether the provided snippets sufficiently answer the query, whether you need to invoke `file_search.msearch`, or another available tool (such as `web`, if available) should be used instead.
+
+Tool-ordering Guidelines:
+1. For queries related to uploaded files, if snippets are insufficient, strongly prefer invoking `file_search.msearch` over other tools.
+    - Avoid using `web.run`, `python` analysis, or any other tools until you have either:
+        - Confirmed with high confidence the answer is not in the files, or
+        - Have high confidence `file_search_tool` queries are not sufficient to answer the query.
+2. Avoid usage of `web_search/web.run` for queries related to uploaded files
+    - Carefully consider whether the user's query is better answered by web search results rather than available snippets or results from `file_search_tool`.
+    - Unless the user's query is clearly unrelated to the uploaded files, prefer using `file_search.msearch`. You can always follow up with a web search if necessary for a more complete response.
+3. Avoid using `python` unless necessary or requested by user.
+    - If the user's query is answerable from the parsed text and images from the uploaded files, or from `file_search_tool`, do not invoke `python`.
+
+Always keep this instruction in mind for the rest of the conversation, as the user may reference these files or ask related questions later on.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+🔄 **APPROVAL REQUIRED**  
+**What:** Spin up a full-stack project scaffold and wire in an Express server so we can add the two routes you described.  
+**Why:** Following **#assignReactFlow**, we need a clean workspace before we start coding each activity.  
+**Details:**  
+
+| Step | Action |
+|---|---|
+| 1 | **Project name** → **`comments-proxy-api`** (feel free to rename). |
+| 2 | **Scaffolding** → Option **4**: Vite (React + TypeScript)<br/>`npm create vite@latest comments-proxy-api --template react-ts` |
+| 3 | Inside the new project, add a **`server/`** folder:<br/>```bash<br/>cd comments-proxy-api<br/>mkdir server && cd server<br/>npm init -y<br/>npm i express axios cors<br/>``` |
+| 4 | Create **`server/index.js`** with a minimal Express app (port `5000`) and CORS enabled. |
+| 5 | Add an NPM script in the root **package.json**:<br/>`"server": "node server/index.js"` |
+| 6 | _(Optional)_ Generate a **setup.sh** script that installs deps and opens VS Code. |
+
+**Impact:**  
+- Provides a ready-to-run Express backend (`localhost:5000`) alongside a React playground (optional) in one repo.  
+- Gives us a solid base to implement:  
+  1. `GET /api/comments` → data transformer  
+  2. `GET /api/users/:id` → robust error proxy  
+
+Should I proceed? (yes / no)
+
+--------------------------------------------------------------------------------
+
+USER:
+yes
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+### **Stage 1 — Project Scaffold & Minimal Express Server**
+
+> All steps are copy-paste-ready. Nothing permanent is written to disk until you run the commands locally.  
+> Folder names assume you’re inside the repo root (`comments-proxy-api/`).
+
+| # | Command / Action | Purpose |
+|---|---|---|
+| 1 | **Create Vite + React + TS front-end**<br>`npm create vite@latest comments-proxy-api -- --template react-ts` | Gives us a React playground (optional for this exercise). |
+| 2 | **Set up the back-end folder**<br>`cd comments-proxy-api && mkdir server && cd server && npm init -y` | Isolates server code. |
+| 3 | **Install server deps**<br>`npm i express axios cors` | Express + Axios fetch + CORS. |
+| 4 | **Create `server/index.js`** (see code below) | Minimal API host on port `5000` with CORS. |
+| 5 | **Expose a server script** in root **`package.json`**:<br>```json5
+"scripts": {
+  "dev": "vite",
+  "server": "node server/index.js"
+}
+``` | Lets you run `npm run server`. |
+
+---
+
+#### `server/index.js`
+
+```javascript
+// server/index.js
+// -----------------------------------------------------------
+// Minimal Express host (localhost:5000) – will extend in Stage 2
+// -----------------------------------------------------------
+
+import express from 'express';
+import axios from 'axios';
+import cors from 'cors';
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// ────────────────────────────────────────────────────────────
+// Middleware
+// ────────────────────────────────────────────────────────────
+app.use(cors());              // allow front-end origin
+app.use(express.json());      // in case we POST later
+
+// ────────────────────────────────────────────────────────────
+// Placeholder root
+// ────────────────────────────────────────────────────────────
+app.get('/', (_req, res) => {
+  res.json({ status: 'API up – ready for routes' });
+});
+
+// TODO (Stage 2): GET /api/comments
+// TODO (Stage 3): GET /api/users/:id
+
+// ────────────────────────────────────────────────────────────
+// Launch server
+// ────────────────────────────────────────────────────────────
+app.listen(PORT, () =>
+  console.log(`✨ Server listening on http://localhost:${PORT}`)
+);
+```
+
+> **Run it:**  
+> ```bash
+> # one terminal
+> npm run server
+> # another terminal (optional front-end)
+> npm run dev
+> ```
+
+---
+
+#### Commit message
+
+```
+feat: scaffold project & minimal Express server
+
+- Created Vite React TS front-end (comments-proxy-api)
+- Added server/ folder with Express, Axios, CORS
+- Minimal index.js listening on port 5000
+- Root script "npm run server" for back-end
+```
+
+---
+
+## 🔄 APPROVAL REQUIRED
+**What:** Implement **Stage 2** – route `GET /api/comments` (data transformer).  
+**Why:** Adds first user-facing endpoint; requires new code > 20 lines.  
+**Details:**  
+1. Inside `server/index.js`, import `router` or add inline handler.  
+2. Fetch all comments from `https://jsonplaceholder.typicode.com/comments` with Axios.  
+3. Map result → `"<email> commented: <name>"` array.  
+4. Wrap in `try / catch`; on failure respond `500` + `{ error: 'Unable to fetch comments' }`.  
+5. Add JSDoc + inline comments.  
+6. Commit message: `feat: GET /api/comments data transformer`.  
+**Impact:** First activity complete; endpoint live at `/api/comments`.
+
+Should I proceed? (yes / no)
+
+--------------------------------------------------------------------------------
+
+USER:
+lets treat every activity by separate first
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+🔄 **APPROVAL REQUIRED — Activity 1 Only**  
+**What:** Add the single route **`GET /api/comments`** to fulfill Activity 1 (data transformer).  
+**Why:** You asked to tackle each activity separately; this implements Activity 1 end-to-end before touching Activity 2.  
+**Details (exact code to be inserted into `server/index.js`):**  
+
+```javascript
+/**
+ * GET /api/comments
+ * Transforms external comments into "<email> commented: <name>" strings
+ */
+app.get('/api/comments', async (_req, res) => {
+  try {
+    const { data } = await axios.get(
+      'https://jsonplaceholder.typicode.com/comments'
+    );
+
+    // Map each comment object → desired string format
+    const transformed = data.map(
+      ({ email, name }) => `${email} commented: ${name}`
+    );
+
+    res.json(transformed); // 200 OK
+  } catch (err) {
+    console.error('Error fetching comments:', err.message);
+    res.status(500).json({ error: 'Unable to fetch comments' });
+  }
+});
+```
+
+*Lines added ≈ 25 (major change).*  
+After saving, run `npm run server` and hit `http://localhost:5000/api/comments` — you should get an array of strings.
+
+**Impact:**  
+- **Activity 1 complete**: front-end or any client can now consume transformed comments.  
+- No changes yet for Activity 2; that will follow in a separate step.
+
+Should I proceed? (yes / no)
+
+--------------------------------------------------------------------------------
+
+USER:
+yes
+
+--------------------------------------------------------------------------------
+
+TOOL:
+Successfully created text document 'Server/index' which will be referenced in all future messages with the unique identifier textdoc_id: '686e8853e5a08191bf067487e4145b0f'
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+### Stage 2 — **Activity 1 Complete: `GET /api/comments`**
+
+The new route is now live in **`server/index.js`** (see canvas).  
+Hit:
+
+```bash
+npm run server          # start backend
+curl localhost:5000/api/comments
+```
+
+You’ll receive an array of strings like:
+
+```
+"Eliseo@gardner.biz commented: id labore ex et quam laborum"
+```
+
+#### Git-style commit message
+
+```
+feat: GET /api/comments data transformer
+
+- Added /api/comments route
+- Fetches JSONPlaceholder comments via Axios
+- Maps to "<email> commented: <name>" strings
+- Robust try/catch → 500 on failure
+```
+
+---
+
+#### Next step
+
+Ready for **Activity 2** (robust user proxy) whenever you are. Just say the word!
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here’s what I see in the screenshot and what’s probably tripping the server up:
+
+---
+
+### 1 — The server never starts
+
+`curl` can’t connect because the Node process exits before it can listen on port 5000.  
+Look at the tiny red squiggle in the gutter beside **line 1** of `src/server/index.js`—that’s a syntax error that kills the process instantly.
+
+```js
+cors from 'cors';          // ❌  “import” keyword missing
+```
+
+Node hits that line, throws `SyntaxError: Unexpected identifier`, then quits.
+Hence: “failed to connect … could not connect to server.”
+
+> **Fix** – add the missing keyword (or switch to `require`):
+
+```js
+import cors from 'cors';   // ✅ ES‐module form
+// or
+const cors = require('cors');  // ✅ CommonJS
+```
+
+---
+
+### 2 — Script path mismatch (optional but good to tidy)
+
+Your **package.json** (root of *mod-12*) probably has:
+
+```json
+"scripts": {
+  "server": "node server/index.js"
+}
+```
+
+…but the file that actually exists is  
+`data-transformer/src/server/index.js`.
+
+If you stick with that folder structure, update the script:
+
+```json
+"scripts": {
+  "server": "node data-transformer/src/server/index.js"
+}
+```
+
+or move the **server/** folder to the repo root (the way the original scaffold suggested).
+
+---
+
+### 3 — ES-Modules vs CommonJS
+
+Because you’re using `import … from` syntax, make sure **package.json** contains
+
+```json
+"type": "module"
+```
+
+Otherwise switch all imports to `require`:
+
+```js
+const express = require('express');
+const axios   = require('axios');
+const cors    = require('cors');
+```
+
+Either route is fine—just keep it consistent.
+
+---
+
+## Quick checklist
+
+1. **Add the missing `import` keyword** (or revert to `require`).
+2. **Ensure the run-script points at the real file**.
+3. (If using `import`) add `"type": "module"` to *package.json*.
+
+Then:
+
+```bash
+npm run server
+# expect:
+# ✨ Server listening on http://localhost:5000
+curl http://localhost:5000/api/comments | head
+```
+
+You should now get an array of strings like:
+
+```
+"Eliseo@gardner.biz commented: id labore ex et quam laborum"
+```
+
+Let me know once it’s up, and we can roll into Activity 2!
+
+--------------------------------------------------------------------------------
+
+USER:
+do the full copy and paste code file, and dont forget to do it after changes recomerndations
+
+--------------------------------------------------------------------------------
+
+TOOL:
+Successfully updated text document with textdoc_id '686e8853e5a08191bf067487e4145b0f'
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+✅ **server/index.js** has been fully rewritten with the corrected, ready-to-run code.  
+Open the file in VS Code (canvas reflects the latest version) and hit:
+
+```bash
+# start backend
+npm run server
+# → ✨ Server listening on http://localhost:5000
+```
+
+Then test:
+
+```bash
+curl http://localhost:5000/api/comments | head
+```
+
+You should now see the transformed strings.
+
+> **Reminder:** if you’re using ES modules (`import` syntax), add `"type": "module"` to your project’s `package.json`, or swap `import` for `require`.
+
+Once this is running smoothly, let me know and we’ll jump into Activity 2!
+
+--------------------------------------------------------------------------------
+
+USER:
+not working here is a caption and check our scafolding
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+It looks like VS Code is opening **`src/server/index.js`**, but your project’s **package.json** (at the root of `data-transformer/`) doesn’t have a `"server"` script pointing to that file. When you ran `npm run server`, npm couldn’t find the script—so nothing executed.
+
+Below is the fix I recommend.
+
+---
+
+### What’s wrong
+
+1. **Script missing** – `npm ERR! Missing script: "server"`.
+2. **Path mismatch** – the server entry file lives at `src/server/index.js`, so the script must reference that path.
+
+---
+
+🔄 **APPROVAL REQUIRED**  
+**What:** Add a `"server"` (and optional `"dev"`) script + `"type": "module"` to **`package.json`**.  
+**Why:** Lets you start the backend with `npm run server` and use ES-module `import` syntax without errors.  
+**Details (full `package.json` after patch):**
+
+```json5
+{
+  "name": "data-transformer",
+  "version": "1.0.0",
+  "type": "module",              // 👈 enables ES-module import syntax
+  "main": "src/server/index.js",
+  "scripts": {
+    "server": "node src/server/index.js",  // start backend
+    "dev": "nodemon src/server/index.js"   // hot-reload (optional)
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "cors": "^2.8.5",
+    "express": "^4.19.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"           // optional
+  }
+}
+```
+
+*Changes > 20 lines, so approval is needed.*
+
+**Impact:**  
+- `npm run server` will load **src/server/index.js**, start listening on `http://localhost:5000`, and your `/api/comments` route will work.  
+- Adds nodemon for convenient auto-reload (`npm run dev`).
+
+Should I proceed and patch **package.json** for you? (yes / no)
+
+--------------------------------------------------------------------------------
+
+USER:
+yes
+
+--------------------------------------------------------------------------------
+
+TOOL:
+Successfully created text document 'Package' which will be referenced in all future messages with the unique identifier textdoc_id: '686e8f55a3088191b3556081743f82a2'
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+**`package.json`** has been patched (see canvas) with:
+
+* `"type": "module"` → enables `import` syntax  
+* `"scripts.server"` → `node src/server/index.js`  
+* `"scripts.dev"` → `nodemon …` (hot reload)  
+* Added **nodemon** to `devDependencies`
+
+---
+
+### Next steps on your machine
+
+```bash
+# install the new dev dep
+npm install
+
+# start the backend
+npm run server          # or: npm run dev  (auto-reload)
+
+# expect
+# ✨ Server listening on http://localhost:5000
+curl http://localhost:5000/api/comments | head
+```
+
+You should finally see the transformed comments array.
+
+Ping me once it’s running (or if anything else crops up) and we’ll move on to Activity 2.
+
+--------------------------------------------------------------------------------
+
+USER:
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-12/data-transformer (main)
+$ npm install
+npm error code EJSONPARSE
+npm error path C:\Users\boliv\OneDrive\Desktop\2025-RTT-23\mod-12\data-transformer/package.json
+npm error JSON.parse Expected double-quoted property name in JSON at position 95 (line 4 column 42) while parsing near "...                    // enables ES-module..."
+npm error JSON.parse Failed to parse JSON data.        
+npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript.
+npm error A complete log of this run can be found in: C:\Users\boliv\AppData\Local\npm-cache\_logs\2025-07-09T15_49_50_072Z-debug-0.log
+
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-12/data-transformer (main)
+
+--------------------------------------------------------------------------------
+
+TOOL:
+Successfully updated text document with textdoc_id '686e8f55a3088191b3556081743f82a2'
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+All comments have been removed—`package.json` is now strict, valid JSON.
+
+### Retry on your machine
+
+```bash
+npm install        # should succeed now
+npm run server     # or: npm run dev
+curl http://localhost:5000/api/comments | head
+```
+
+Let me know if it boots up correctly!
+
+--------------------------------------------------------------------------------
+
+USER:
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-12/data-transformer (main)
+$ npm install
+npm error code EJSONPARSE
+npm error path C:\Users\boliv\OneDrive\Desktop\2025-RTT-23\mod-12\data-transformer/package.json
+npm error JSON.parse Expected double-quoted property name in JSON at position 95 (line 4 column 42) while parsing near "...                    // enables ES-module..."
+npm error JSON.parse Failed to parse JSON data.        
+npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript.
+npm error A complete log of this run can be found in: C:\Users\boliv\AppData\Local\npm-cache\_logs\2025-07-09T15_49_50_072Z-debug-0.log
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+The error message still shows the line with the comment `// enables ES-module`, which means **the old version of `package.json` is still on disk** (or it hasn’t been saved).  
+`npm` only understands _pure_ JSON—no comments, no trailing commas.
+
+Below is the entire, valid `package.json`. Copy-paste **everything**, overwrite the existing file, **save**, and try `npm install` again.
+
+```json
+{
+  "name": "data-transformer",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/server/index.js",
+  "scripts": {
+    "server": "node src/server/index.js",
+    "dev": "nodemon src/server/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "cors": "^2.8.5",
+    "express": "^4.19.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3"
+  }
+}
+```
+
+**Next steps**
+
+```bash
+# 1. Save the file
+# 2. Install deps
+npm install
+
+# 3. Start the backend
+npm run server      # or: npm run dev
+# Expected output:
+# ✨ Server listening on http://localhost:5000
+
+# 4. Test
+curl http://localhost:5000/api/comments | head
+```
+
+If `npm install` now succeeds and the server starts, you’ll see the transformed comments.  
+Let me know how it goes!
+
+--------------------------------------------------------------------------------
+
+USER:
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-12/data-transformer (main)
+$ npm run server
+
+> data-transformer@1.0.0 server
+> node src/server/index.js
+
+node:internal/modules/package_json_reader:268
+  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+        ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'axios' imported from C:\Users\boliv\OneDrive\Desktop\2025-RTT-23\mod-12\data-transformer\src\server\index.js
+    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:268:9)
+    at packageResolve (node:internal/modules/esm/resolve:768:81)
+    at moduleResolve (node:internal/modules/esm/resolve:854:18)
+    at defaultResolve (node:internal/modules/esm/resolve:984:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:685:12)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:634:25)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:617:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:273:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:135:49) {
+  code: 'ERR_MODULE_NOT_FOUND'
+}
+
+Node.js v22.14.0
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+`node` can’t locate **axios** because the dependency never got installed (your earlier `npm install` attempts aborted while parsing the bad `package.json`). Now that the file is valid JSON, you just need to install the packages.
+
+### 1 — Install all dependencies
+
+```bash
+# from the project root (data-transformer)
+npm install
+```
+
+You should see something like:
+
+```
+added 58 packages ...
+```
+
+If you only want to be 100 % sure, you can also run:
+
+```bash
+npm ls axios cors express           # verify versions are present
+```
+
+---
+
+### 2 — Start the server
+
+```bash
+npm run server      # or: npm run dev
+```
+
+Expected console output:
+
+```
+✨ Server listening on http://localhost:5000
+```
+
+---
+
+### 3 — Test the endpoint
+
+```bash
+curl http://localhost:5000/api/comments | head
+```
+
+You should get an array of strings:
+
+```
+"Eliseo@gardner.biz commented: id labore ex et quam laborum"
+```
+
+That confirms Activity 1 is working end-to-end.
+
+---
+
+If `npm install` shows any new errors, paste the first 10–15 lines of the error log here and we’ll troubleshoot further. Otherwise, once it’s up, let me know and we can move on to Activity 2!
+
+--------------------------------------------------------------------------------
+
+USER:
+good continue
+
+--------------------------------------------------------------------------------
+
+TOOL:
+Successfully updated text document with textdoc_id '686e8f55a3088191b3556081743f82a2'
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+### Stage 3 — **Activity 2 Complete: Robust Error Proxy**
+
+Your backend now exposes the second endpoint `GET /api/users/:id`.
+
+#### How it works
+* **200 OK** – Returns the JSONPlaceholder user object untouched.  
+* **404** from upstream → returns `404 { "error": "User not found" }`  
+* Any other upstream error → returns **502 Bad Gateway** with a short message.  
+* Unexpected internal errors → **500**.
+
+#### Quick test
+
+```bash
+# Start server
+npm run server
+
+# Happy path
+curl http://localhost:5000/api/users/3 | jq '.name'
+# "Clementine Bauch"
+
+# Not-found
+curl -i http://localhost:5000/api/users/9999
+# HTTP/1.1 404 Not Found
+# { "error": "User not found" }
+
+# Force a 502 demo (bad host)
+# (temporarily change the URL in code or shut off internet to see 502)
+```
+
+#### Git-style commit message
+
+```
+feat: GET /api/users/:id with layered error handling
+
+- Fetches single user via JSONPlaceholder
+- 404 → mirrors as 404 { error: 'User not found' }
+- Other upstream errors → 502 Bad Gateway
+- Full try/catch; Axios error inspection
+```
+
+Both activities are now finished and runnable.
+
+Let me know if you’d like any refactors, tests, or front-end wiring!
+
+--------------------------------------------------------------------------------
+

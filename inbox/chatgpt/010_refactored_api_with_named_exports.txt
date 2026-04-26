@@ -1,0 +1,238 @@
+Title: Refactored API with named exports
+Created: 2025-11-06 09:01:45
+Updated: 2025-11-11 09:11:40
+================================================================================
+
+USER:
+Refactor the API utility module to use named exports for login, registerUser, getProjects, createProject, attach auth token via interceptor, and remove default export.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Create axios instance with correct base URL and headers
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Interceptor: attach token from localStorage to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named API function exports
+export const registerUser = (data) => api.post("/auth/register", data);
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API utility module to use named exports for login, registerUser, getProjects, createProject, attach auth token via interceptor, and remove default export.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Create axios instance with correct base URL
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Attach token to all requests if available
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named exports only (no default export)
+export const registerUser = (data) => api.post("/auth/register", data);
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API utility module to use named exports for login, registerUser, getProjects, createProject, attach auth token via interceptor, and remove default export.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Axios instance with proper base URL
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Interceptor to attach Authorization token to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named exports only (no default export)
+export const loginUser = (data) => api.post("/auth/login", data);
+export const registerUser = (data) => api.post("/auth/register", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API utility module to use named exports for login, registerUser, getProjects, createProject, attach auth token via interceptor, and remove default export.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Create an axios instance with base configuration
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Interceptor to attach auth token to requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named exports only
+export const loginUser = (data) => api.post("/auth/login", data);
+export const registerUser = (data) => api.post("/auth/register", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API utility module to use named exports for login, registerUser, getProjects, createProject, attach auth token via interceptor, and remove default export.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Create an Axios instance with base configuration
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Interceptor to attach Authorization token to all requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named exports only (no default export)
+export const loginUser = (data) => api.post("/auth/login", data);
+export const registerUser = (data) => api.post("/auth/register", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API utility module to use named exports for login, registerUser, getProjects, createProject, attach auth token via interceptor, and remove default export.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Create an Axios instance
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Attach auth token to every request
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named exports only (no default export)
+export const loginUser = (data) => api.post("/auth/login", data);
+export const registerUser = (data) => api.post("/auth/register", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+```
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+This automation has been paused due to too many unread executions. You can resume it in automations settings or by asking ChatGPT.
+
+--------------------------------------------------------------------------------
+

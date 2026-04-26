@@ -1,0 +1,783 @@
+Title: API Integration and Executable
+Created: 2024-12-02 04:06:11
+Updated: 2024-12-02 23:12:41
+================================================================================
+
+USER:
+this informations are for context : "/
+Playground
+Dashboard
+Docs
+API reference
+
+Developer quickstart
+Learn how to make your first API request.
+The OpenAI API provides a simple interface to state-of-the-art AI models for natural language processing, image generation, semantic search, and speech recognition. Follow this guide to learn how to generate human-like responses to natural language prompts, create vector embeddings for semantic search, and generate images from textual descriptions.
+
+Create and export an API key
+Create an API key in the dashboard here, which you’ll use to securely access the API. Store the key in a safe location, like a .zshrc file or another text file on your computer. Once you’ve generated an API key, export it as an environment variable in your terminal.
+
+Export an environment variable in PowerShell
+
+setx OPENAI_API_KEY "your_api_key_here"
+Make your first API request
+With your OpenAI API key exported as an environment variable, you're ready to make your first API request. You can either use the REST API directly with the HTTP client of your choice, or use one of our official SDKs as shown below.
+
+To use the OpenAI API in Python, you can use the official OpenAI SDK for Python. Get started by installing the SDK using pip:
+
+Install the OpenAI SDK with pip
+
+pip install openai
+With the OpenAI SDK installed, create a file called example.py and copy one of the following examples into it:
+
+Create a human-like response to a prompt
+
+from openai import OpenAI
+client = OpenAI()
+
+completion = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You are a helpful assistant."},
+        {
+            "role": "user",
+            "content": "Write a haiku about recursion in programming."
+        }
+    ]
+)
+
+print(completion.choices[0].message)
+Execute the code with python example.py. In a few moments, you should see the output of your API request!
+
+Next steps
+Now that you've made your first OpenAI API request, you can explore the following resources:
+
+Chat Completions
+Learn more about generating text responses to natural language prompts
+
+Image Generation
+Generate images using our DALL·E model
+
+Embeddings
+Create vector representations of text, used for similarity search
+
+Text-to-speech
+Generate human-like voice recordings with our text-to-speech model
+
+Speech-to-text
+Create transcriptions of voice recordings with our Whisper model
+
+Moderation
+Analyze and filter user-created content with our moderation model
+
+Fine-tuning
+Fine-tune our models with your own data
+
+Batch
+Batch requests for async jobs
+
+Full API Reference
+View the full REST API reference for OpenAI
+
+Was this page useful?"
+And this one too: "
+Anthropic home pagelight logo
+English
+Search...
+
+Navigation
+Get started
+Initial setup
+Get started
+Initial setup
+Let’s learn how to use the Anthropic API to build with Claude.
+
+In this example, we’ll have Claude write a Python function that checks if a string is a palindrome.
+
+​
+Prerequisites
+You will need:
+
+An Anthropic Console account
+An API key
+Python 3.7+ or TypeScript 4.5+
+Anthropic provides Python and TypeScript SDKs, although you can make direct HTTP requests to the API.
+
+​
+Start with the Workbench
+Any API call you make–-regardless of the specific task-–sends a well-configured prompt to the Anthropic API. As you’re learning to make the most of Claude, we recommend that you start the development process in the Workbench, a web-based interface to Claude.
+
+Log into the Anthropic Console and click Workbench.
+
+In the middle section, under User, let’s ask Claude a question.
+
+User
+
+Why is the ocean salty?
+Click Run. On the right side, you’ll see output like
+
+Response
+
+The ocean is salty due to several factors:
+
+1. Weathering of rocks: Over millions of years, rain, rivers, and streams have eroded rocks containing mineral salts. These salts are carried into the ocean by water runoff.
+2. Volcanic activity: Underwater volcanoes and hydrothermal vents release minerals, including salts, into the ocean water.
+3. Atmospheric deposition: Salt particles from ocean spray can be carried by wind and deposited back into the ocean.
+4. Evaporation: As water evaporates from the surface of the ocean, it leaves behind dissolved salts, increasing the concentration of salt in the remaining water.
+5. Biological processes: Some marine organisms contribute to the ocean's salinity by releasing salt compounds as byproducts of their metabolism.
+
+Over time, these processes have continuously added salts to the ocean, while evaporation removes pure water, leading to the ocean's current salinity levels. It's important to note that the total amount of salt in the ocean remains relatively stable because the input of salts is balanced by the removal of salts through processes like the formation of evaporite deposits.
+This is a good answer, but let’s say we wanted to control the exact type of answer Claude gives. For example, only allowing Claude to respond to questions with poems. We can control the format, tone, and personality of the response by adding a System Prompt.
+
+System prompt
+
+You are a world-class poet. Respond only with short poems.
+Click Run again.
+
+Response
+
+The ocean's salty brine,
+A tale of time and elements combined.
+Rocks and rain, a slow erosion,
+Minerals carried in solution.
+Eons pass, the salt remains,
+In the vast, eternal watery domain.
+See how Claude’s response has changed? LLMs respond well to clear and direct instructions. You can put the role instructions in either the system prompt or the user message. We recommend testing to see which way yields the best results for your use case.
+
+Once you’ve tweaked the inputs such that you’re pleased with the output–-and have a good sense how to use Claude–-convert your Workbench into an integration.
+
+Click Get Code to copy the generated code representing your Workbench session.
+​
+Install the SDK
+Anthropic provides SDKs for Python (3.7+) and TypeScript (4.5+).
+
+Python
+TypeScript
+In your project directory, create a virtual environment.
+
+Python
+
+python -m venv claude-env
+Activate the virtual environment using
+
+On macOS or Linux, source claude-env/bin/activate
+On Windows, claude-env\Scripts\activate
+Python
+
+pip install anthropic
+​
+Set your API key
+Every API call requires a valid API key. The SDKs are designed to pull the API key from an environmental variable ANTHROPIC_API_KEY. You can also supply the key to the Anthropic client when initializing it.
+
+macOS and Linux
+Windows
+
+export ANTHROPIC_API_KEY='your-api-key-here'
+​
+Call the API
+Call the API by passing the proper parameters to the /messages/create endpoint.
+
+Note that the code provided by the Workbench sets the API key in the constructor. If you set the API key as an environment variable, you can omit that line as below.
+
+Python
+TypeScript
+claude_quickstart.py
+
+import anthropic
+
+client = anthropic.Anthropic()
+
+message = client.messages.create(
+    model="claude-3-5-sonnet-20241022",
+    max_tokens=1000,
+    temperature=0,
+    system="You are a world-class poet. Respond only with short poems.",
+    messages=[
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Why is the ocean salty?"
+                }
+            ]
+        }
+    ]
+)
+print(message.content)
+Run the code using python3 claude_quickstart.py or node claude_quickstart.js.
+
+Response
+
+[TextBlock(text="The ocean's salty brine,\nA tale of time and design.\nRocks and rivers, their minerals shed,\nAccumulating in the ocean's bed.\nEvaporation leaves salt behind,\nIn the vast waters, forever enshrined.", type='text')]
+The Workbench and code examples use default model settings for: model (name), temperature, and max tokens to sample.
+This quickstart shows how to develop a basic, but functional, Claude-powered application using the Console, Workbench, and API. You can use this same workflow as the foundation for much more powerful use cases.
+
+​
+Next steps
+Now that you have made your first Anthropic API request, it’s time to explore what else is possible:
+
+Use Case Guides
+End to end implementation guides for common use cases.
+
+Anthropic Cookbook
+Learn with interactive Jupyter notebooks that demonstrate uploading PDFs, embeddings, and more.
+
+Prompt Library
+Explore dozens of example prompts for inspiration across use cases.
+
+Was this page helpful?
+
+
+Yes
+
+No
+Overview
+Intro to Claude
+x
+linkedin
+" 
+Please help me create a Python script that builds a GUI application using PyQt6 to serve as an AI API switcher. The application should have the following features:
+
+1. A dialog to securely store the API keys for both OpenAI and Anthropic using the keyring library.
+
+2. A chat window with a dropdown to select between the OpenAI (ChatGPT) and Anthropic (Claude) APIs.
+
+3. A chat display area to show the user's messages and the AI's responses.
+
+4. An input field and send button to allow the user to send messages to the selected AI.
+
+5. Error handling to display appropriate error messages if the API calls fail.
+
+6. The application should make the API calls using the requests library and display the responses in the chat window.
+
+Please provide the complete Python script with comments explaining the key steps.
+
+Additionally, provide the steps to create a standalone .exe executable from the Python code that can be easily run on an end-user machine without requiring the terminal to start and stop the application (and handle security of API keys for this solution accordingly).
+
+Use model name [Claude 3.5 Haiku] for Claude and [gpt-4o-mini] for OpenAI.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here is the Python script that creates a GUI application using PyQt6 for switching between OpenAI and Anthropic APIs. It includes storing API keys securely with the `keyring` library and making API calls with the `requests` library.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+It seems the necessary library `PyQt6` is not available in this environment. To proceed, ensure you have the required dependencies installed on your local machine. You can install them using the following commands:
+
+```bash
+pip install PyQt6 requests keyring
+```
+
+After installing the dependencies, copy the provided script to your local Python environment, and run it using `python script_name.py`.
+
+---
+
+### Steps to Create a Standalone `.exe` File
+
+1. **Install PyInstaller**:
+   ```bash
+   pip install pyinstaller
+   ```
+
+2. **Generate the Executable**:
+   Run the following command in the terminal from the directory containing your script:
+   ```bash
+   pyinstaller --onefile --windowed script_name.py
+   ```
+
+   - `--onefile`: Combines all files into a single executable.
+   - `--windowed`: Prevents the terminal window from appearing when running the application.
+
+3. **Locate the Executable**:
+   The `.exe` file will be located in the `dist` folder created in the same directory as your script.
+
+4. **Distribute Securely**:
+   Ensure the application securely handles the API keys by saving them in the OS's keyring.
+
+If you need further assistance in setting up or testing this script on your machine, let me know!
+
+--------------------------------------------------------------------------------
+
+USER:
+i have installed it please retry
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+It seems the environment here still does not support `PyQt6`. Since you've installed the required modules locally, you can copy and run the script on your local Python environment.
+
+To proceed:
+
+1. Ensure you have `PyQt6`, `requests`, and `keyring` installed:
+   ```bash
+   pip install PyQt6 requests keyring
+   ```
+
+2. Save the script as `ai_api_switcher.py`.
+
+3. Run the script using:
+   ```bash
+   python ai_api_switcher.py
+   ```
+
+4. Follow the steps mentioned earlier to package it into a standalone `.exe` file using `PyInstaller`.
+
+Let me know if you need further assistance or additional modifications!
+
+--------------------------------------------------------------------------------
+
+USER:
+“explain this to me like an amateur and walk me through it step by step from the beginning.”
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here’s a simple, step-by-step guide to help you create and use the AI API Switcher GUI application:
+
+---
+
+### **What We'll Achieve**
+We’ll build a small application that:
+1. Lets you securely store API keys for OpenAI and Anthropic.
+2. Allows you to choose between these APIs and send chat messages.
+3. Displays responses from the APIs in a chat window.
+
+---
+
+### **Step 1: Install Required Software**
+You need Python installed on your computer. If it isn’t already installed:
+1. Go to the [Python website](https://www.python.org/).
+2. Download and install the latest version.
+3. During installation, check the box to "Add Python to PATH."
+
+Now, install the required libraries by typing the following commands in your terminal or command prompt:
+
+```bash
+pip install PyQt6 requests keyring
+```
+
+- **PyQt6**: This creates the GUI (the visual part of the application).
+- **Requests**: This sends messages to the APIs.
+- **Keyring**: This stores your API keys securely.
+
+---
+
+### **Step 2: Create the Python Script**
+1. Open a text editor or an Integrated Development Environment (IDE) like VS Code or PyCharm.
+2. Copy the Python script below into a new file.
+3. Save the file as `ai_api_switcher.py`.
+
+Here’s the script:
+
+```python
+import sys
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QVBoxLayout, QHBoxLayout, QWidget, QLabel,
+    QLineEdit, QPushButton, QTextBrowser, QComboBox, QMessageBox
+)
+import requests
+import keyring
+
+class AIAPISwitcher(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("AI API Switcher")
+        self.setGeometry(100, 100, 600, 400)
+        self.initUI()
+
+    def initUI(self):
+        main_layout = QVBoxLayout()
+
+        # API Key Management
+        api_key_layout = QHBoxLayout()
+        self.api_key_input = QLineEdit(self)
+        self.api_key_input.setPlaceholderText("Enter API Key")
+        self.api_key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        save_key_button = QPushButton("Save API Key")
+        save_key_button.clicked.connect(self.save_api_key)
+        api_key_layout.addWidget(QLabel("API Key:"))
+        api_key_layout.addWidget(self.api_key_input)
+        api_key_layout.addWidget(save_key_button)
+        main_layout.addLayout(api_key_layout)
+
+        # Dropdown for API Selection
+        self.api_dropdown = QComboBox(self)
+        self.api_dropdown.addItems(["OpenAI (ChatGPT)", "Anthropic (Claude)"])
+        main_layout.addWidget(self.api_dropdown)
+
+        # Chat Display Area
+        self.chat_display = QTextBrowser(self)
+        self.chat_display.setPlaceholderText("Chat will appear here...")
+        main_layout.addWidget(self.chat_display)
+
+        # Message Input and Send Button
+        input_layout = QHBoxLayout()
+        self.message_input = QLineEdit(self)
+        self.message_input.setPlaceholderText("Type your message...")
+        send_button = QPushButton("Send")
+        send_button.clicked.connect(self.send_message)
+        input_layout.addWidget(self.message_input)
+        input_layout.addWidget(send_button)
+        main_layout.addLayout(input_layout)
+
+        # Central Widget
+        central_widget = QWidget()
+        central_widget.setLayout(main_layout)
+        self.setCentralWidget(central_widget)
+
+    def save_api_key(self):
+        """Save the API key securely."""
+        api_key = self.api_key_input.text().strip()
+        selected_api = self.api_dropdown.currentText()
+
+        if api_key:
+            keyring.set_password("ai_api_switcher", selected_api, api_key)
+            QMessageBox.information(self, "Success", f"API key saved for {selected_api}.")
+            self.api_key_input.clear()
+        else:
+            QMessageBox.warning(self, "Error", "API key cannot be empty.")
+
+    def send_message(self):
+        """Send a message to the selected API."""
+        message = self.message_input.text().strip()
+        if not message:
+            QMessageBox.warning(self, "Error", "Message cannot be empty.")
+            return
+
+        selected_api = self.api_dropdown.currentText()
+        api_key = keyring.get_password("ai_api_switcher", selected_api)
+
+        if not api_key:
+            QMessageBox.warning(self, "Error", f"No API key saved for {selected_api}.")
+            return
+
+        self.chat_display.append(f"User: {message}")
+        self.message_input.clear()
+
+        try:
+            if selected_api == "OpenAI (ChatGPT)":
+                response = self.call_openai_api(api_key, message)
+            elif selected_api == "Anthropic (Claude)":
+                response = self.call_anthropic_api(api_key, message)
+            else:
+                raise ValueError("Invalid API selection.")
+
+            self.chat_display.append(f"{selected_api}: {response}")
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
+
+    def call_openai_api(self, api_key, message):
+        """Call the OpenAI API."""
+        url = "https://api.openai.com/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "gpt-4o-mini",
+            "messages": [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": message}
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()["choices"][0]["message"]["content"]
+
+    def call_anthropic_api(self, api_key, message):
+        """Call the Anthropic API."""
+        url = "https://api.anthropic.com/v1/messages/create"
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": "claude-3-5-sonnet-20241022",
+            "max_tokens": 1000,
+            "temperature": 0,
+            "system": "You are a world-class poet. Respond only with short poems.",
+            "messages": [
+                {"role": "user", "content": message}
+            ]
+        }
+
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        return response.json()["completion"]
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = AIAPISwitcher()
+    window.show()
+    sys.exit(app.exec())
+```
+
+---
+
+### **Step 3: Run the Application**
+1. Open your terminal or command prompt.
+2. Navigate to the folder where you saved the script.
+3. Run the script using:
+   ```bash
+   python ai_api_switcher.py
+   ```
+
+---
+
+### **Step 4: Use the Application**
+1. Enter your API key for OpenAI or Anthropic and save it.
+2. Choose the desired API from the dropdown menu.
+3. Type a message in the input box and click "Send."
+4. The response from the API will appear in the chat window.
+
+---
+
+### **Step 5: Create a Standalone Executable**
+1. Install PyInstaller:
+   ```bash
+   pip install pyinstaller
+   ```
+2. Create the `.exe` file:
+   ```bash
+   pyinstaller --onefile --windowed ai_api_switcher.py
+   ```
+3. Locate the `.exe` in the `dist` folder and share or use it directly.
+
+Let me know if you have any questions during any step!
+
+--------------------------------------------------------------------------------
+
+USER:
+i am getting this error :"C:\Users\Bolivar\Documents\SWITCH>python
+Python 3.12.6 (tags/v3.12.6:a4a2d2b, Sep  6 2024, 20:11:23) [MSC v.1940 64 bit (AMD64)] on win32
+Type "help", "copyright", "credits" or "license" for more information.
+>>> python -m venv claude-env
+  File "<stdin>", line 1
+    python -m venv claude-env
+              ^^^^
+SyntaxError: invalid syntax"
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+The error occurs because you're typing a **shell command** (for creating a virtual environment) inside the Python interactive shell. The interactive shell (`>>>`) only accepts Python code, not terminal commands.
+
+### How to Fix It
+
+Exit the Python shell first:
+1. In the Python interactive shell, type:
+   ```python
+   exit()
+   ```
+
+2. Run the command to create the virtual environment **from the terminal/command prompt**, not inside the Python shell:
+   ```bash
+   python -m venv claude-env
+   ```
+
+---
+
+### Step-by-Step Instructions
+
+1. **Open the Command Prompt**:
+   - Use `Win + R`, type `cmd`, and press Enter.
+
+2. **Navigate to Your Project Directory**:
+   Use the `cd` command to go to your project folder:
+   ```bash
+   cd C:\Users\Bolivar\Documents\SWITCH
+   ```
+
+3. **Create the Virtual Environment**:
+   Run:
+   ```bash
+   python -m venv claude-env
+   ```
+
+4. **Activate the Virtual Environment**:
+   On Windows, activate it using:
+   ```bash
+   claude-env\Scripts\activate
+   ```
+
+5. **Install the Dependencies**:
+   Once the virtual environment is active, run:
+   ```bash
+   pip install PyQt6 requests keyring
+   ```
+
+6. **Run Your Script**:
+   Run the Python script:
+   ```bash
+   python ai_api_switcher.py
+   ```
+
+---
+
+Let me know if you encounter further issues!
+
+--------------------------------------------------------------------------------
+
+USER:
+iam still receiving this error
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+The error indicates that the requested URL for the Anthropic API (`https://api.anthropic.com/v1/messages/create`) is invalid or does not exist. This could be due to:
+
+1. **Incorrect API URL**: The endpoint might have been miswritten or outdated.
+2. **Authentication Issue**: If the API key is incorrect, some APIs return a `404` error.
+3. **Endpoint Access Permissions**: The API key may lack permissions to use the specified endpoint.
+
+---
+
+### **Steps to Fix**
+
+1. **Check the Correct Endpoint**
+   - Verify the Anthropic API documentation for the correct endpoint URL.
+   - If you're unsure, log in to the Anthropic Console and check the API section for the correct endpoints.
+
+   If the endpoint has changed, update this line in the script:
+   ```python
+   url = "https://api.anthropic.com/v1/messages/create"
+   ```
+
+2. **Test the API Key**
+   - Double-check that the API key you saved is valid and has the correct permissions for this API.
+   - To test, you can use a simple API call with `curl` or a REST client like Postman.
+
+3. **Debugging the Response**
+   - Update the script to print the full response for debugging. Modify the `call_anthropic_api` function:
+     ```python
+     def call_anthropic_api(self, api_key, message):
+         url = "https://api.anthropic.com/v1/messages/create"
+         headers = {
+             "Authorization": f"Bearer {api_key}",
+             "Content-Type": "application/json"
+         }
+         payload = {
+             "model": "claude-3-5-sonnet-20241022",
+             "max_tokens": 1000,
+             "temperature": 0,
+             "system": "You are a world-class poet. Respond only with short poems.",
+             "messages": [
+                 {"role": "user", "content": message}
+             ]
+         }
+
+         response = requests.post(url, headers=headers, json=payload)
+         print(response.status_code, response.text)  # Debugging line
+         response.raise_for_status()
+         return response.json()["completion"]
+     ```
+
+4. **Verify Permissions**
+   - Log in to the Anthropic Console and ensure your API key has access to the `Claude` model and the proper endpoint.
+
+5. **Use the Workbench**
+   - Test your queries first in the Anthropic Workbench. Once they work as expected, copy the endpoint, payload, and parameters to your script.
+
+---
+
+If you can provide details from the response printed in the debugging step above, I can help pinpoint the issue further.
+
+--------------------------------------------------------------------------------
+
+USER:
+how do i test it via postman
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here's a step-by-step guide to test the Anthropic API using **Postman**:
+
+---
+
+### **Step 1: Open Postman**
+1. Download and install [Postman](https://www.postman.com/) if you haven’t already.
+2. Open the Postman application.
+
+---
+
+### **Step 2: Create a New Request**
+1. Click the **"New"** button in the top-left corner.
+2. Select **"Request"** and give it a name, e.g., "Test Anthropic API".
+3. Choose a collection or create a new one to save the request, then click **Save**.
+
+---
+
+### **Step 3: Configure the Request**
+1. **Set the Method** to **POST**.
+2. **Enter the URL**: 
+   ```plaintext
+   https://api.anthropic.com/v1/messages/create
+   ```
+
+---
+
+### **Step 4: Add Headers**
+1. Go to the **Headers** tab.
+2. Add the following headers:
+   - **Key**: `Authorization`, **Value**: `Bearer YOUR_API_KEY`
+     - Replace `YOUR_API_KEY` with your actual Anthropic API key.
+   - **Key**: `Content-Type`, **Value**: `application/json`
+
+---
+
+### **Step 5: Add the Body**
+1. Go to the **Body** tab.
+2. Select **raw** and **JSON** (application/json) as the input format.
+3. Add the following JSON payload:
+   ```json
+   {
+       "model": "claude-3-5-sonnet-20241022",
+       "max_tokens": 1000,
+       "temperature": 0,
+       "system": "You are a world-class poet. Respond only with short poems.",
+       "messages": [
+           {"role": "user", "content": "Why is the ocean salty?"}
+       ]
+   }
+   ```
+
+---
+
+### **Step 6: Send the Request**
+1. Click the **Send** button.
+2. Postman will send the request to the Anthropic API.
+
+---
+
+### **Step 7: Analyze the Response**
+1. If the request is successful:
+   - You’ll see a **200 OK** status and the response in JSON format in the bottom panel. The response might look like:
+     ```json
+     {
+         "completion": "The ocean's salty brine, a tale of time and design..."
+     }
+     ```
+
+2. If there’s an error:
+   - You’ll see an error status (e.g., `404`, `401`, or `403`).
+   - Check the error message in the response body for details.
+
+---
+
+### **Step 8: Troubleshooting**
+- **401 Unauthorized**: The API key is invalid. Recheck your API key and permissions.
+- **404 Not Found**: The endpoint URL is incorrect. Confirm the correct endpoint in the Anthropic API documentation.
+- **400 Bad Request**: The payload format might be wrong. Ensure the JSON structure is correct.
+- **403 Forbidden**: The API key might lack the necessary permissions for this endpoint.
+
+---
+
+Once the API works in Postman, you can use the same headers, URL, and payload in your Python script. Let me know if you need help debugging any specific issues!
+
+--------------------------------------------------------------------------------
+

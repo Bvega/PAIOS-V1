@@ -1,0 +1,94 @@
+Title: Handle Missing Sheets Error
+Created: 2024-08-19 17:30:11
+Updated: 2024-08-19 17:30:24
+================================================================================
+
+USER:
+please fix this bug so if it does not fing the requested sheets it continues to next step
+:"Sub TabColorChange()
+'
+' Tab_Color Macro
+'
+
+'
+    Sheets("Turned down").Select
+    With ActiveWorkbook.Sheets("Turned down").Tab
+        .ThemeColor = xlThemeColorAccent6
+        .TintAndShade = 0.599993896298105
+    End With
+    Sheets("Meeting Rooms").Select
+    With ActiveWorkbook.Sheets("Meeting Rooms").Tab
+        .ThemeColor = xlThemeColorAccent5
+        .TintAndShade = 0.599993896298105
+    End With
+    Sheets("Submitted proposal").Select
+    With ActiveWorkbook.Sheets("Submitted proposal").Tab
+        .ThemeColor = xlThemeColorAccent4
+        .TintAndShade = 0.599993896298105
+    End With
+    Sheets("Summary").Select
+    With ActiveWorkbook.Sheets("Summary").Tab
+        .ThemeColor = xlThemeColorAccent2
+        .TintAndShade = 0.599993896298105
+    End With
+End Sub
+"
+
+--------------------------------------------------------------------------------
+
+TOOL:
+Please remember to search the user's documents if an answer to their question is not contained in the above snippets.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+To modify the existing VBA code so it skips non-existent sheets and continues with the next steps, you can incorporate error handling. Specifically, using `On Error Resume Next` will bypass any runtime errors (like trying to select a sheet that doesn't exist) and move to the next line of code. Here's the adjusted code:
+
+```vba
+Sub TabColorChange()
+'
+' Tab_Color Macro
+'
+
+    On Error Resume Next ' Skip errors if the sheet is not found
+    
+    ' Attempt to color the "Turned down" tab
+    Sheets("Turned down").Select
+    With ActiveWorkbook.Sheets("Turned down").Tab
+        .ThemeColor = xlThemeColorAccent6
+        .TintAndShade = 0.599993896298105
+    End With
+    
+    ' Attempt to color the "Meeting Rooms" tab
+    Sheets("Meeting Rooms").Select
+    With ActiveWorkbook.Sheets("Meeting Rooms").Tab
+        .ThemeColor = xlThemeColorAccent5
+        .TintAndShade = 0.599993896298105
+    End With
+    
+    ' Attempt to color the "Submitted proposal" tab
+    Sheets("Submitted proposal").Select
+    With ActiveWorkbook.Sheets("Submitted proposal").Tab
+        .ThemeColor = xlThemeColorAccent4
+        .TintAndShade = 0.599993896298105
+    End With
+    
+    ' Attempt to color the "Summary" tab
+    Sheets("Summary").Select
+    With ActiveWorkbook.Sheets("Summary").Tab
+        .ThemeColor = xlThemeColorAccent2
+        .TintAndShade = 0.599993896298105
+    End With
+    
+    On Error GoTo 0 ' Reset error handling back to default
+End Sub
+```
+
+### Explanation:
+- **On Error Resume Next:** This line tells VBA to continue executing the code even if an error occurs, allowing it to skip over any code that would otherwise cause an error (like trying to select a sheet that doesn't exist).
+- **On Error GoTo 0:** This line resets error handling to its default behavior (i.e., stopping the code if an error occurs).
+
+This approach ensures the macro doesn't stop if one of the sheets is missing and continues processing the next sheet as intended.
+
+--------------------------------------------------------------------------------
+

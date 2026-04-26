@@ -1,0 +1,86 @@
+Title: LLM function call in GPT
+Created: 2025-09-28 13:18:42
+Updated: 2025-09-28 22:42:02
+================================================================================
+
+USER:
+Can you función call another LLM from within an openai own GPT?
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Directly from within an **OpenAI GPT (Custom GPT)**, you **cannot function-call another LLM**. Custom GPTs only support:
+
+- **Knowledge retrieval** (via uploaded files or connected sources)  
+- **Action tools** (like web, gcal, gmail, etc.)  
+- **Function calling** (but only to APIs you yourself define when building the GPT)  
+
+So if you want your GPT to "call another LLM," you need to do it indirectly:
+
+### Two main ways
+1. **Via an API you expose**  
+   - Host another LLM (say LLaMA, Claude, Gemini, or even a second OpenAI endpoint) behind an API.  
+   - Add that API as a function in your Custom GPT.  
+   - When invoked, the GPT will send the query payload to your API, which forwards it to the other LLM, and then return the response.  
+
+2. **Via orchestration outside of the GPT**  
+   - Instead of making the GPT itself call another model, set up an orchestrator (e.g., a Python FastAPI server, LangChain agent, or your own middleware).  
+   - The GPT calls your orchestrator API, and that API decides whether to send the request to another LLM or process it in another way.  
+
+### What’s not possible
+- You can’t natively configure a Custom GPT to “swap” to a different LLM on the fly.  
+- There’s no direct “call GPT-4, then call Claude, then call Gemini” within the GPT Builder interface. That chaining/orchestration layer must live outside.
+
+Would you like me to draft you a **step-by-step setup** where your Custom GPT can query, say, another OpenAI model (like GPT-4o-mini) or even a non-OpenAI LLM, using the function calling mechanism? That way it acts like it’s “calling” another model.
+
+--------------------------------------------------------------------------------
+
+USER:
+compile this information so i can add it to a brainstorming process i am working on right now
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here’s a clean compiled version you can drop into your brainstorming process:
+
+---
+
+# Using a Custom GPT to Call Another LLM
+
+## Core Limitation
+- Custom GPTs **cannot directly call another LLM** inside the GPT Builder environment.  
+- They only support:
+  - Knowledge retrieval (files, connected sources)  
+  - Built-in tools (web, gmail, gcal, etc.)  
+  - Custom **function calls** (to APIs you define)  
+
+## Indirect Methods
+
+### 1. API Gateway Approach
+- Host the other LLM (Claude, Gemini, LLaMA, or even another OpenAI model) behind an API endpoint.  
+- Add that API as a **function** in the GPT Builder.  
+- Flow: Custom GPT → API function → Forwarded request to target LLM → Response returned to GPT.  
+
+### 2. Orchestrator Layer
+- Set up a middleware/orchestration service (FastAPI, Node.js, LangChain, etc.).  
+- Custom GPT calls this orchestrator via function call.  
+- Orchestrator decides:
+  - Which LLM to use.  
+  - How to format input/output.  
+  - Whether to chain multiple models together.  
+
+## Not Possible
+- No native “swap model” option in GPT Builder.  
+- Cannot directly integrate other LLMs without API indirection.  
+
+## Practical Outcome
+- With function calling, you can simulate "multi-LLM" behavior:  
+  - GPT delegates tasks to your API.  
+  - Your API manages multiple LLMs in the background.  
+
+---
+
+Do you want me to also **turn this into a visual flow diagram** (boxes + arrows style) so you can quickly plug it into your brainstorming notes?
+
+--------------------------------------------------------------------------------
+

@@ -1,0 +1,290 @@
+Title: Refactor API helper module for exports
+Created: 2025-11-06 09:07:52
+Updated: 2025-11-12 09:04:24
+================================================================================
+
+USER:
+Refactor the API helper module to export named functions for login, getProjects, createProject, and default axios instance with baseURL and token interceptor.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Create configured axios instance
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Automatically include token in requests if available
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named exports for use across components
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+
+// Default export for general axios usage
+export default api;
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API helper module to export named functions for login, getProjects, createProject, and default axios instance with baseURL and token interceptor.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Create axios instance with base URL
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Interceptor to include token automatically
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named exports for specific API actions
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+
+// Default export for direct axios usage
+export default api;
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API helper module to export named functions for login, getProjects, createProject, and default axios instance with baseURL and token interceptor.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Create an axios instance with the correct base URL
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Add a request interceptor to include the token automatically
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named API functions
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+
+// Default export for flexible axios use
+export default api;
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API helper module to export named functions for login, getProjects, createProject, and default axios instance with baseURL and token interceptor.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Create configured axios instance
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Attach token automatically to all requests
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named API functions
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+
+// Default export for flexible axios usage
+export default api;
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API helper module to export named functions for login, getProjects, createProject, and default axios instance with baseURL and token interceptor.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// src/utils/api.js
+import axios from "axios";
+
+// Create an axios instance with base URL and default headers
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Token interceptor to automatically attach the Bearer token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named API helper functions
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+
+// Default export for flexible axios usage
+export default api;
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API helper module to export named functions for login, getProjects, createProject, and default axios instance with baseURL and token interceptor.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// src/utils/api.js
+import axios from "axios";
+
+// Create an axios instance with default configuration
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Add interceptor to include token automatically in headers
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named API functions
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+
+// Default export of axios instance
+export default api;
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor the API helper module to export named functions for login, getProjects, createProject, and default axios instance with baseURL and token interceptor.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// src/utils/api.js
+import axios from "axios";
+
+// Create axios instance with base URL and headers
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Token interceptor
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named exports
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+
+// Default export
+export default api;
+```
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+This automation has been paused due to too many unread executions. You can resume it in automations settings or by asking ChatGPT.
+
+--------------------------------------------------------------------------------
+

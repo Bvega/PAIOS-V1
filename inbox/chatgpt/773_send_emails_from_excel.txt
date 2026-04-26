@@ -1,0 +1,108 @@
+Title: Send Emails from Excel
+Created: 2024-11-12 21:26:30
+Updated: 2024-11-12 21:27:48
+================================================================================
+
+USER:
+I WANT TO SET MY EXCEL APP TO USE AN SPECIFIC E-MAIL TO SENT EMAIL FROM A LIST, IS THAT POSIBLE?
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Yes, it's definitely possible to use a specific email address to send emails from your Excel app using VBA (Visual Basic for Applications). Here's how you can achieve this with Outlook and Excel:
+
+1. **Prerequisites**:
+   - Microsoft Excel and Outlook need to be installed and configured on your computer.
+   - The email address you want to use should already be set up in Outlook (as either the default or an additional account).
+
+2. **VBA Code to Send Emails from Excel Using a Specific Email**:
+
+   The code below allows you to specify a particular email account to send from by selecting the `SendUsingAccount` property in Outlook.
+
+```vba
+Sub SendEmailUsingSpecificAccount()
+
+    ' Declare variables
+    Dim OutlookApp As Object
+    Dim MailItem As Object
+    Dim Account As Object
+    Dim EmailAddress As String
+    Dim WS As Worksheet
+    Dim lastRow As Long, i As Long
+    
+    ' Set your worksheet and range variables
+    Set WS = ThisWorkbook.Sheets("Sheet1") ' Change to your sheet name
+    lastRow = WS.Cells(WS.Rows.Count, "A").End(xlUp).Row ' Assumes list starts in column A
+
+    ' Initialize Outlook application
+    Set OutlookApp = CreateObject("Outlook.Application")
+
+    ' Loop through the list to send emails
+    For i = 2 To lastRow ' Assuming headers are in the first row
+
+        ' Create an Outlook Mail Item
+        Set MailItem = OutlookApp.CreateItem(0)
+
+        ' Set the email address you want to send the email from
+        EmailAddress = WS.Cells(i, "B").Value ' Assuming the email addresses are in column B
+
+        ' Find and assign the specific email account
+        For Each Account In OutlookApp.Session.Accounts
+            If Account.SmtpAddress = EmailAddress Then
+                Set MailItem.SendUsingAccount = Account
+                Exit For
+            End If
+        Next Account
+
+        ' Set mail properties
+        With MailItem
+            .To = WS.Cells(i, "C").Value ' Assuming recipient emails are in column C
+            .Subject = "Subject Text Here"
+            .Body = "This is the body text for the email."
+            ' .Attachments.Add "C:\Path\To\Attachment" ' Optional, to add attachments
+            .Send
+        End With
+
+    Next i
+
+    ' Clean up
+    Set MailItem = Nothing
+    Set OutlookApp = Nothing
+    MsgBox "Emails have been sent successfully."
+
+End Sub
+```
+
+### **How to Use This Code**
+
+1. **Open the Excel Workbook**:
+   - Press `ALT + F11` to open the VBA editor.
+   - In the editor, click on `Insert > Module` to add a new module.
+
+2. **Copy and Paste the Code**:
+   - Paste the code above into the new module.
+
+3. **Update Variables**:
+   - Change `"Sheet1"` to the name of the worksheet where your email data is located.
+   - Update the column references (`"B"` and `"C"`) based on where your email addresses are in the worksheet.
+   - Customize the email subject and body to suit your needs.
+
+4. **Run the Macro**:
+   - Press `F5` or go back to Excel and run the macro from the `Developer` tab (`Macros`).
+
+### **Code Explanation**
+
+- **OutlookApp** and **MailItem**: These objects represent the Outlook application and an email item, respectively.
+- **Account Selection**: The loop `For Each Account In OutlookApp.Session.Accounts` is used to select the specific email account that matches the email address you want to use for sending emails.
+- **Loop Through Rows**: The `For i = 2 To lastRow` loop sends an email for each row in your Excel list, skipping the header row.
+
+### **Tips for Usage**
+
+- Make sure you have configured the email address properly in Outlook.
+- The script will loop through the list and send emails automatically; verify your recipients and messages to avoid mistakes.
+- To avoid unintended mass emails, it's recommended to test the script with a small data set.
+
+This should allow you to send emails from Excel using a specific email address configured in Outlook.
+
+--------------------------------------------------------------------------------
+

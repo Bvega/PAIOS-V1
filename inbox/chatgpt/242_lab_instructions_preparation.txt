@@ -1,0 +1,2129 @@
+Title: Lab Instructions Preparation
+Created: 2025-06-25 20:17:06
+Updated: 2025-06-25 22:06:02
+================================================================================
+
+USER:
+here are the instruction for our next lab,strictly follow it and in case some improvement can be made ask first for approval, after yu have read and are ready to proceed ask for the lab instructions so we can start
+
+--------------------------------------------------------------------------------
+
+TOOL:
+All the files uploaded by the user have been fully loaded. Searching won't provide additional information.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+I’ve reviewed the teaching prompt template and will follow it exactly. If any improvements come to mind, I’ll ask for your approval first. Ready to proceed—please share the lab instructions so we can get started.
+
+--------------------------------------------------------------------------------
+
+USER:
+here are the lab instructions :" Lab 2
+Custom Hooks Implementation
+Scenario
+In modern React development, abstracting reusable logic into custom Hooks is a fundamental practice for building maintainable and scalable applications. You’ve been tasked with developing two common custom Hooks: usePagination for managing client-side pagination logic, and useDebounce for debouncing rapidly changing values, often used with search inputs.
+
+This lab will challenge you to think about hook design, state management within hooks, handling dependencies, and ensuring your hooks are generic enough for reuse.
+
+Learning Objectives
+Upon successful completion of this lab, you will be able to:
+
+Design and implement reusable custom React Hooks from scratch.
+Encapsulate complex logic and state management within a custom Hook.
+Effectively manage dependencies and side effects within custom Hooks.
+Understand how to return values and functions from custom Hooks for use in components.
+Apply custom Hooks to solve common problems like pagination and debouncing input.
+Consider basic performance aspects (e.g., memoization) where applicable within custom Hooks.
+Project Requirements
+You will create two custom Hooks in this lab. Each hook should be implemented in its own file (e.g., usePagination.ts or usePagination.js, useDebounce.ts or useDebounce.js).
+
+You should also create an example components directory to demonstrate the usage of your custom hooks.
+
+usePagination Hook
+Objective: Create a hook to manage pagination logic for a list of items.
+
+Functionality:
+
+Inputs:
+totalItems: The total number of items to be paginated.
+itemsPerPage: The number of items to display per page (default to 10).
+initialPage: The page to start on (default to 1).
+Return Values (Object):
+currentPage: The current active page number.
+totalPages: The total number of pages calculated based on totalItems and itemsPerPage.
+startIndex: The starting index of items for the current page (0-based).
+endIndex: The ending index of items for the current page (0-based).
+itemsOnCurrentPage: The actual number of items on the current page (useful for the last page).
+setPage(pageNumber): A function to jump to a specific page number.
+nextPage(): A function to go to the next page.
+prevPage(): A function to go to the previous page.
+canNextPage: Boolean indicating if there is a next page.
+canPrevPage: Boolean indicating if there is a previous page.
+Implementation Details:
+
+Calculate totalPages correctly (e.g., using Math.ceil).
+Ensure currentPage does not go below 1 or above totalPages.
+startIndex and endIndex should be calculated based on the currentPage and itemsPerPage.
+itemsOnCurrentPage should correctly reflect the count for the last page if it’s not full.
+Example Usage Component (PaginationDemo.tsx):
+
+Create a component that uses your usePagination hook.
+Simulate a list of items (e.g., an array of 100 numbers or strings).
+Display the current page number, total pages, and the slice of items for the current page.
+Include buttons for “Previous”, “Next”, and jumping to specific page numbers (if you wish to demonstrate setPage more thoroughly).
+Disable Previous/Next buttons when canPrevPage or canNextPage is false.
+Example Solution
+Pagination Demo
+Items per page: 
+10
+Total Items: 123
+Item 1
+Item 2
+Item 3
+Item 4
+Item 5
+Item 6
+Item 7
+Item 8
+Item 9
+Item 10
+Previous
+Page 
+1
+of 13
+Next
+Showing items 1 - 10 (Total on this page: 10)
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+useDebounce Hook
+Objective: Create a hook to debounce a rapidly changing value.
+
+Functionality:
+
+Inputs:
+value: The value to debounce (e.g., a search string from an input field).
+delay: The debounce delay in milliseconds (default to 500ms).
+Return Value:
+debouncedValue: The value after the debounce delay has passed without value changing.
+Implementation Details:
+
+Use useState to store the debouncedValue.
+Use useEffect to set up a timer (setTimeout) whenever the input value or delay changes.
+The effect should clear the timer (using clearTimeout) if value or delay changes before the timer fires (this is the core of debouncing).
+When the timer finally fires, update the debouncedValue state.
+Example Usage Component (DebounceSearchDemo.tsx):
+
+Create a component with an input field.
+As the user types into the input, use the useDebounce hook to get the debounced version of the input’s value.
+Display both the current input value and the debounced value.
+You can simulate an API call or filtering action whenever the debouncedValue changes by logging to the console (e.g., “Searching for: [debouncedValue]”).
+Example Solution
+Debounce Search Demo
+Debounce Delay (ms): 
+500
+Type to search...
+Current Input:
+Debounced Value (after 500ms):
+Simulated Search Results:
+Type to see results.
+
+Implementation Guidelines
+Hook Design: Strive for clarity and reusability in your hook’s API.
+State Management: Use useState appropriately within your hooks.
+Side Effects: Use useEffect for any side effects. Ensure correct dependency arrays and cleanup functions.
+TypeScript (Optional but Recommended): If you are comfortable with TypeScript, try to type your hook inputs and return values for better self-documentation and safety.
+Note
+Focus on the internal logic and API design of your custom Hooks. The visual styling of the demo components is secondary to the correct functionality of the hooks themselves.
+
+Tip
+Test your hooks thoroughly. Consider edge cases. For usePagination, what happens if totalItems is 0? For useDebounce, how does it behave if the delay changes?
+
+Submission
+Submit your project on Canvas via a GitHub link that includes all necessary files for this lab. Ensure your custom hooks and the demo components are included and functional.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+I’ve reviewed the Lab 2 instructions for implementing `usePagination` and `useDebounce`.  
+
+Shall I start by scaffolding the project structure—creating the hook files (`usePagination.ts`, `useDebounce.ts`) and the demo components (`PaginationDemo.tsx`, `DebounceSearchDemo.tsx`)? Or is there any tweak you’d like to approve first?
+
+--------------------------------------------------------------------------------
+
+USER:
+before continuing I wanted to share the caption of the graphic example for the two hooks
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Understood—please go ahead and share the caption text for those example graphics so I can integrate it before we proceed.
+
+--------------------------------------------------------------------------------
+
+USER:
+is in the captios already uploaded you have two examples one for pagination the other for debounce
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+import os
+
+tasks = [
+    "1. Scaffold project structure for Lab 2: create hook files (usePagination.tsx, useDebounce.tsx) under src/hooks and demo components under src/components.",
+    "2. Implement usePagination hook with required functionality: currentPage, totalPages, startIndex, endIndex, itemsOnCurrentPage, setPage, nextPage, prevPage, canNextPage, canPrevPage.",
+    "3. Implement useDebounce hook with required functionality: debouncedValue based on input value and delay.",
+    "4. Create PaginationDemo.tsx component to demonstrate usePagination hook with simulated list of items and navigation controls.",
+    "5. Create DebounceSearchDemo.tsx component to demonstrate useDebounce hook with input field and display of current and debounced values.",
+    "6. Test both hooks and components ensuring correct behavior and handling edge cases (e.g., totalItems = 0, delay changes).",
+    "7. Prepare code for submission: commit code to GitHub repository, ensure all files are included and functional.",
+    "8. Submit via Canvas with GitHub link to the repository containing the project files."
+]
+
+file_path = '/mnt/data/chatGPT_Todo.txt'
+with open(file_path, 'w') as f:
+    f.write("\n".join(tasks))
+
+file_path
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+I’ve created the ToDo list with our Lab 2 tasks. You can download it here:
+
+[Download chatGPT_Todo.txt](sandbox:/mnt/data/chatGPT_Todo.txt)
+
+Let’s start with Task 1: scaffolding the project structure. I’ll create the necessary hook files (`usePagination.tsx`, `useDebounce.tsx`) under `src/hooks` and the demo components under `src/components`.
+
+--------------------------------------------------------------------------------
+
+USER:
+proceed
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+**Current To-Do (reprioritized):**  
+1. Scaffold project structure  
+2. Implement `usePagination` hook  
+3. Implement `useDebounce` hook  
+4. Build `PaginationDemo.tsx`  
+5. Build `DebounceSearchDemo.tsx`  
+6. Test hooks & edge cases  
+7. Prepare GitHub repo & commit  
+8. Submit via Canvas  
+
+---
+
+## Task 1: Scaffold Project Structure
+
+**Folder layout:**
+```
+src/
+├── hooks/
+│   ├── usePagination.ts
+│   └── useDebounce.ts
+└── components/
+    ├── PaginationDemo.tsx
+    └── DebounceSearchDemo.tsx
+```
+
+---
+
+### `src/hooks/usePagination.ts`
+```ts
+import { useState, useMemo, useCallback } from 'react';
+
+interface UsePaginationOptions {
+  totalItems: number;
+  itemsPerPage?: number;
+  initialPage?: number;
+}
+
+interface UsePaginationResult {
+  currentPage: number;
+  totalPages: number;
+  startIndex: number;
+  endIndex: number;
+  itemsOnCurrentPage: number;
+  setPage: (page: number) => void;
+  nextPage: () => void;
+  prevPage: () => void;
+  canNextPage: boolean;
+  canPrevPage: boolean;
+}
+
+export function usePagination({
+  totalItems,
+  itemsPerPage = 10,
+  initialPage = 1,
+}: UsePaginationOptions): UsePaginationResult {
+  const [currentPage, setCurrentPage] = useState(initialPage);
+
+  const totalPages = useMemo(() => Math.ceil(totalItems / itemsPerPage), [totalItems, itemsPerPage]);
+  const startIndex = useMemo(() => (currentPage - 1) * itemsPerPage, [currentPage, itemsPerPage]);
+  const endIndex = useMemo(() => Math.min(startIndex + itemsPerPage - 1, totalItems - 1), [startIndex, itemsPerPage, totalItems]);
+  const itemsOnCurrentPage = useMemo(() => endIndex - startIndex + 1, [startIndex, endIndex]);
+
+  const setPage = useCallback((page: number) => {
+    const p = Math.max(1, Math.min(page, totalPages));
+    setCurrentPage(p);
+  }, [totalPages]);
+
+  const nextPage = useCallback(() => setPage(currentPage + 1), [currentPage, setPage]);
+  const prevPage = useCallback(() => setPage(currentPage - 1), [currentPage, setPage]);
+  const canNextPage = currentPage < totalPages;
+  const canPrevPage = currentPage > 1;
+
+  return {
+    currentPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    itemsOnCurrentPage,
+    setPage,
+    nextPage,
+    prevPage,
+    canNextPage,
+    canPrevPage,
+  };
+}
+```
+
+---
+
+### `src/hooks/useDebounce.ts`
+```ts
+import { useState, useEffect } from 'react';
+
+export function useDebounce<T>(value: T, delay: number = 500): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+```
+
+---
+
+### `src/components/PaginationDemo.tsx`
+```tsx
+import React from 'react';
+import { usePagination } from '../hooks/usePagination';
+
+export function PaginationDemo() {
+  const totalItems = 123;
+  const { currentPage, totalPages, startIndex, endIndex, itemsOnCurrentPage, nextPage, prevPage, canNextPage, canPrevPage, setPage } =
+    usePagination({ totalItems, itemsPerPage: 10 });
+
+  const items = Array.from({ length: totalItems }, (_, i) => `Item ${i + 1}`).slice(startIndex, endIndex + 1);
+
+  return (
+    <div>
+      <h2>Pagination Demo</h2>
+      <p>Total Items: {totalItems}</p>
+      <ul>
+        {items.map(item => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+      <button onClick={prevPage} disabled={!canPrevPage}>Previous</button>
+      <span> Page {currentPage} of {totalPages} </span>
+      <button onClick={nextPage} disabled={!canNextPage}>Next</button>
+      <div>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button key={i} onClick={() => setPage(i + 1)} disabled={currentPage === i + 1}>
+            {i + 1}
+          </button>
+        ))}
+      </div>
+      <p>Showing items {startIndex + 1}–{endIndex + 1} (Total on this page: {itemsOnCurrentPage})</p>
+    </div>
+  );
+}
+```
+
+---
+
+### `src/components/DebounceSearchDemo.tsx`
+```tsx
+import React, { useState, useEffect } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
+
+export function DebounceSearchDemo() {
+  const [input, setInput] = useState('');
+  const debounced = useDebounce(input, 500);
+
+  useEffect(() => {
+    if (debounced) {
+      console.log(`Searching for: ${debounced}`);
+    }
+  }, [debounced]);
+
+  return (
+    <div>
+      <h2>Debounce Search Demo</h2>
+      <label>
+        Debounce Delay (ms):
+        <input type="number" defaultValue={500} onChange={e => {/* handle delay change if desired */}} />
+      </label>
+      <input
+        type="text"
+        placeholder="Type to search..."
+        value={input}
+        onChange={e => setInput(e.target.value)}
+      />
+      <p>Current Input: {input}</p>
+      <p>Debounced Value (after 500ms): {debounced}</p>
+    </div>
+  );
+}
+```
+
+---
+
+**Next:** Task 2 – implement and test the full logic of `usePagination`. Let me know to dive in.  
+
+[Download updated To-Do list](sandbox:/mnt/data/chatGPT_Todo.txt)
+
+--------------------------------------------------------------------------------
+
+USER:
+lets commit before continue
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+import os
+
+tasks_updated = [
+    "1. Commit scaffolded project structure to GitHub.",
+    "2. Implement usePagination hook with required functionality: currentPage, totalPages, startIndex, endIndex, itemsOnCurrentPage, setPage, nextPage, prevPage, canNextPage, canPrevPage.",
+    "3. Implement useDebounce hook with required functionality: debouncedValue based on input value and delay.",
+    "4. Build PaginationDemo.tsx component to demonstrate usePagination hook with simulated list of items and navigation controls.",
+    "5. Build DebounceSearchDemo.tsx component to demonstrate useDebounce hook with input field and display of current and debounced values.",
+    "6. Test both hooks and components ensuring correct behavior and handling edge cases (e.g., totalItems = 0, delay changes).",
+    "7. Prepare GitHub repo & commit remaining code.",
+    "8. Submit via Canvas with GitHub link to the repository containing the project files."
+]
+
+file_path = '/mnt/data/chatGPT_Todo.txt'
+with open(file_path, 'w') as f:
+    f.write("\n".join(tasks_updated))
+
+file_path
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+The To-Do list has been updated to reflect committing the scaffolded structure as the next step. You can download the updated list here:
+
+[Download updated chatGPT_Todo.txt](sandbox:/mnt/data/chatGPT_Todo.txt)
+
+Let me know once you’ve committed, and I’ll proceed with implementing the `usePagination` hook.
+
+--------------------------------------------------------------------------------
+
+USER:
+proceed
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+# Committing scaffolded structure
+
+# Stage all files
+!git add src/hooks/usePagination.ts src/hooks/useDebounce.ts src/components/PaginationDemo.tsx src/components/DebounceSearchDemo.tsx /mnt/data/chatGPT_Todo.txt
+
+# Commit with message
+!git commit -m "chore: scaffold Lab 2 project structure and To-Do list"
+
+# Push to origin (assumes remote already set)
+!git push origin main
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+It looks like the environment isn’t a Git repository. You can initialize Git and then commit:
+
+```bash
+cd your-project-root
+git init
+git add .
+git commit -m "chore: scaffold Lab 2 project structure and To-Do list"
+git remote add origin <your-repo-url>
+git push -u origin main
+```
+
+Let me know once that’s done, and I’ll proceed with implementing the `usePagination` hook logic.
+
+--------------------------------------------------------------------------------
+
+USER:
+implement
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+{"name": "usePagination.ts", "type": "code/typescript", "content": "import { useState, useMemo, useCallback } from 'react';\n\ninterface UsePaginationOptions {\n  totalItems: number;\n  itemsPerPage?: number;\n  initialPage?: number;\n}\n\ninterface UsePaginationResult {\n  currentPage: number;\n  totalPages: number;\n  startIndex: number;\n  endIndex: number;\n  itemsOnCurrentPage: number;\n  setPage: (page: number) => void;\n  nextPage: () => void;\n  prevPage: () => void;\n  canNextPage: boolean;\n  canPrevPage: boolean;\n}\n\nexport function usePagination({\n  totalItems,\n  itemsPerPage = 10,\n  initialPage = 1,\n}: UsePaginationOptions): UsePaginationResult {\n  const [currentPage, setCurrentPage] = useState(initialPage);\n\n  // Total number of pages\n  const totalPages = useMemo(\n    () => Math.ceil(totalItems / itemsPerPage),\n    [totalItems, itemsPerPage]\n  );\n\n  // Calculate start and end indices\n  const startIndex = useMemo(\n    () => (currentPage - 1) * itemsPerPage,\n    [currentPage, itemsPerPage]\n  );\n\n  const endIndex = useMemo(\n    () => Math.min(startIndex + itemsPerPage - 1, totalItems - 1),\n    [startIndex, itemsPerPage, totalItems]\n  );\n\n  // Number of items on the current page (handles last page size)\n  const itemsOnCurrentPage = useMemo(\n    () => {\n      if (totalItems === 0) return 0;\n      return endIndex - startIndex + 1;\n    },\n    [startIndex, endIndex, totalItems]\n  );\n\n  // Function to jump to a specific page, clamped between 1 and totalPages\n  const setPage = useCallback(\n    (page: number) => {\n      const safePage = Math.max(1, Math.min(page, totalPages));\n      setCurrentPage(safePage);\n    },\n    [totalPages]\n  );\n\n  const nextPage = useCallback(() => setPage(currentPage + 1), [currentPage, setPage]);\n  const prevPage = useCallback(() => setPage(currentPage - 1), [currentPage, setPage]);\n\n  const canNextPage = currentPage < totalPages;\n  const canPrevPage = currentPage > 1;\n\n  return {\n    currentPage,\n    totalPages,\n    startIndex,\n    endIndex,\n    itemsOnCurrentPage,\n    setPage,\n    nextPage,\n    prevPage,\n    canNextPage,\n    canPrevPage,\n  };\n}"}
+
+--------------------------------------------------------------------------------
+
+TOOL:
+Successfully created text document 'Use Pagination' which will be referenced in all future messages with the unique identifier textdoc_id: '685c9eeda9b481918a403b2c89de8830'
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+I’ve implemented the `usePagination` hook in `src/hooks/usePagination.ts`. Let me know when you’d like to proceed with testing or if you’d like any adjustments before moving on to `useDebounce`.
+
+--------------------------------------------------------------------------------
+
+USER:
+lest test
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here’s a Jest + React Hooks Testing Library suite for `usePagination`. Save this as **`src/hooks/__tests__/usePagination.test.ts`**, then run your tests (`npm test`).
+
+```ts
+// src/hooks/__tests__/usePagination.test.ts
+import { renderHook, act } from '@testing-library/react-hooks';
+import { usePagination } from '../usePagination';
+
+describe('usePagination hook', () => {
+  it('handles zero items', () => {
+    const { result } = renderHook(() => usePagination({ totalItems: 0 }));
+    expect(result.current.totalPages).toBe(0);
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.startIndex).toBe(0);
+    expect(result.current.endIndex).toBe(-1);
+    expect(result.current.itemsOnCurrentPage).toBe(0);
+    expect(result.current.canNextPage).toBe(false);
+    expect(result.current.canPrevPage).toBe(false);
+  });
+
+  it('calculates pages correctly with defaults', () => {
+    const { result } = renderHook(() => usePagination({ totalItems: 25 }));
+    expect(result.current.totalPages).toBe(3);
+    expect(result.current.startIndex).toBe(0);
+    expect(result.current.endIndex).toBe(9);
+    expect(result.current.itemsOnCurrentPage).toBe(10);
+  });
+
+  it('nextPage and prevPage update currentPage within bounds', () => {
+    const { result } = renderHook(() => usePagination({ totalItems: 25 }));
+    act(() => result.current.nextPage());
+    expect(result.current.currentPage).toBe(2);
+    expect(result.current.canPrevPage).toBe(true);
+
+    act(() => result.current.prevPage());
+    expect(result.current.currentPage).toBe(1);
+    expect(result.current.canPrevPage).toBe(false);
+  });
+
+  it('setPage clamps to [1, totalPages]', () => {
+    const { result } = renderHook(() => usePagination({ totalItems: 15, itemsPerPage: 5 }));
+    // totalPages = 3
+    act(() => result.current.setPage(5));
+    expect(result.current.currentPage).toBe(3);
+
+    act(() => result.current.setPage(0));
+    expect(result.current.currentPage).toBe(1);
+  });
+
+  it('last page has correct start/end indices', () => {
+    const { result } = renderHook(() => usePagination({ totalItems: 12, itemsPerPage: 5 }));
+    // pages: 1:[0–4], 2:[5–9], 3:[10–11]
+    act(() => result.current.setPage(3));
+    expect(result.current.startIndex).toBe(10);
+    expect(result.current.endIndex).toBe(11);
+    expect(result.current.itemsOnCurrentPage).toBe(2);
+  });
+});
+```
+
+**Steps to run:**
+1. Install test utilities if you haven’t:  
+   ```bash
+   npm install --save-dev @testing-library/react-hooks @testing-library/jest-dom
+   ```
+2. Run your test suite:  
+   ```bash
+   npm test
+   ```
+
+Let me know the results or if you need any tweaks!
+
+--------------------------------------------------------------------------------
+
+USER:
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10 (main)
+$ npm install --save-dev @testing-library/react-hooks @testing-library/jest-dom
+npm error code ERESOLVE
+npm error ERESOLVE unable to resolve dependency tree
+npm error
+npm error While resolving: lab2-mod-10@0.0.0
+npm error Found: react@19.1.0
+npm error node_modules/react
+npm error   react@"^19.1.0" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error peer react@"^16.9.0 || ^17.0.0" from @testing-library/react-hooks@8.0.1
+npm error node_modules/@testing-library/react-hooks
+npm error   dev @testing-library/react-hooks@"*" from the root project
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error C:\Users\boliv\AppData\Local\npm-cache\_logs\2025-06-26T01_18_08_403Z-eresolve-report.txt
+npm error A complete log of this run can be found in: C:\Users\boliv\AppData\Local\npm-cache\_logs\2025-06-26T01_18_08_403Z-debug-0.log
+
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+You can bypass the peer‐dependency conflict by installing with `--legacy-peer-deps`. From your project root, run:
+
+```bash
+npm install --save-dev @testing-library/react-hooks @testing-library/jest-dom --legacy-peer-deps
+```
+
+Then re-run:
+
+```bash
+npm test
+```
+
+Let me know how the tests come back.
+
+--------------------------------------------------------------------------------
+
+USER:
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10 (main)
+$ npm test
+npm error Missing script: "test"
+npm error
+npm error To see a list of scripts, run:
+npm error   npm run
+npm error A complete log of this run can be found in: C:\Users\boliv\AppData\Local\npm-cache\_logs\2025-06-26T01_18_53_495Z-debug-0.log
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Add a test runner script to your project and then install the testing dependencies. Here’s one way using Jest:
+
+1. **Edit `package.json`**  
+   Under `"scripts"` add:
+   ```json
+   {
+     "scripts": {
+       "test": "jest"
+     }
+   }
+   ```
+
+2. **Install Jest + Testing Library**  
+   From your project root run:
+   ```bash
+   npm install --save-dev jest ts-jest @types/jest @testing-library/react-hooks @testing-library/jest-dom --legacy-peer-deps
+   ```
+
+3. **Initialize Jest config**  
+   ```bash
+   npx ts-jest config:init
+   ```
+   This will create a basic `jest.config.js`.
+
+4. **Run your tests**  
+   ```bash
+   npm test
+   ```
+
+If you’d rather use Vitest (especially in a Vite-based project), replace step 1 with `"test": "vitest"` and in step 2 install `vitest` instead of `jest`:
+
+```bash
+npm install --save-dev vitest @testing-library/react-hooks @testing-library/jest-dom --legacy-peer-deps
+```
+
+Then run:
+
+```bash
+npm test
+```
+
+Let me know which path you’d like (Jest vs. Vitest) or once you’ve added the test script so we can run and see the `usePagination` tests pass.
+
+--------------------------------------------------------------------------------
+
+USER:
+remember to suggest and make the full copy and paste
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here’s a **complete copy-and-paste** setup using **Vitest**, which plays nicely with Vite-based React projects:
+
+---
+
+1. **Update `package.json`**  
+   Add the `test` script under `"scripts"`:
+
+   ```diff
+   {
+     "name": "lab2-mod-10",
+     "version": "0.0.0",
+     "private": true,
+     "scripts": {
+   +   "test": "vitest",
+       "dev": "vite",
+       "build": "vite build",
+       "preview": "vite preview"
+     },
+     // … rest of your package.json …
+   }
+   ```
+
+2. **Install Vitest + Testing Library**  
+   Run this in your project root:
+
+   ```bash
+   npm install --save-dev vitest @testing-library/react-hooks @testing-library/jest-dom @testing-library/user-event --legacy-peer-deps
+   ```
+
+3. **Create `vitest.config.ts`** at your project root:
+
+   ```ts
+   import { defineConfig } from 'vitest/config';
+   import react from '@vitejs/plugin-react';
+
+   export default defineConfig({
+     plugins: [react()],
+     test: {
+       globals: true,
+       environment: 'jsdom',
+       setupFiles: './vitest.setup.ts',
+     },
+   });
+   ```
+
+4. **Setup file for Jest-DOM matchers**  
+   Create **`vitest.setup.ts`** at project root:
+
+   ```ts
+   import '@testing-library/jest-dom';
+   ```
+
+5. **Add the test suite**  
+   Save as **`src/hooks/__tests__/usePagination.test.ts`**:
+
+   ```ts
+   import { renderHook, act } from '@testing-library/react-hooks';
+   import { usePagination } from '../usePagination';
+
+   describe('usePagination hook', () => {
+     it('handles zero items', () => {
+       const { result } = renderHook(() => usePagination({ totalItems: 0 }));
+       expect(result.current.totalPages).toBe(0);
+       expect(result.current.currentPage).toBe(1);
+       expect(result.current.startIndex).toBe(0);
+       expect(result.current.endIndex).toBe(-1);
+       expect(result.current.itemsOnCurrentPage).toBe(0);
+       expect(result.current.canNextPage).toBe(false);
+       expect(result.current.canPrevPage).toBe(false);
+     });
+
+     it('calculates pages correctly with defaults', () => {
+       const { result } = renderHook(() => usePagination({ totalItems: 25 }));
+       expect(result.current.totalPages).toBe(3);
+       expect(result.current.startIndex).toBe(0);
+       expect(result.current.endIndex).toBe(9);
+       expect(result.current.itemsOnCurrentPage).toBe(10);
+     });
+
+     it('nextPage and prevPage update currentPage within bounds', () => {
+       const { result } = renderHook(() => usePagination({ totalItems: 25 }));
+       act(() => result.current.nextPage());
+       expect(result.current.currentPage).toBe(2);
+       expect(result.current.canPrevPage).toBe(true);
+
+       act(() => result.current.prevPage());
+       expect(result.current.currentPage).toBe(1);
+       expect(result.current.canPrevPage).toBe(false);
+     });
+
+     it('setPage clamps to [1, totalPages]', () => {
+       const { result } = renderHook(() => usePagination({ totalItems: 15, itemsPerPage: 5 }));
+       act(() => result.current.setPage(5));
+       expect(result.current.currentPage).toBe(3);
+       act(() => result.current.setPage(0));
+       expect(result.current.currentPage).toBe(1);
+     });
+
+     it('last page has correct start/end indices', () => {
+       const { result } = renderHook(() => usePagination({ totalItems: 12, itemsPerPage: 5 }));
+       act(() => result.current.setPage(3));
+       expect(result.current.startIndex).toBe(10);
+       expect(result.current.endIndex).toBe(11);
+       expect(result.current.itemsOnCurrentPage).toBe(2);
+     });
+   });
+   ```
+
+6. **Run your tests**  
+   ```bash
+   npm test
+   ```
+
+That’s it—just copy-and-paste those four files/commands. Let me know the test results!
+
+--------------------------------------------------------------------------------
+
+USER:
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10 (main)
+$ npm test
+npm error code EJSONPARSE
+npm error JSON.parse Invalid package.json: JSONParseError: Expected property name or '}' in JSON at position 83 (line 6 column 1) while parsing near "...rue,\n  \"scripts\": {\n+   \"test\": \"vitest\"..."
+npm error JSON.parse Failed to parse JSON data.
+npm error JSON.parse Note: package.json must be actual JSON, not just JavaScript.
+npm error A complete log of this run can be found in: C:\Users\boliv\AppData\Local\npm-cache\_logs\2025-06-26T01_25_43_144Z-debug-0.log
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here’s a **fully valid `package.json`** you can copy-and-paste (replace your existing file):
+
+```json
+{
+  "name": "lab2-mod-10",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@testing-library/react-hooks": "^8.0.1",
+    "@testing-library/jest-dom": "^6.0.1",
+    "@testing-library/user-event": "^14.0.0",
+    "vitest": "^0.34.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0"
+  }
+}
+```
+
+1. Overwrite your **`package.json`** with the above (ensure you remove any stray `+` characters).  
+2. Install dependencies:
+
+   ```bash
+   npm install --legacy-peer-deps
+   ```
+
+3. Verify your `vitest.config.ts`, `vitest.setup.ts`, and test file are in place as outlined earlier.  
+4. Run the tests:
+
+   ```bash
+   npm test
+   ```
+
+That will fix the JSON parse error and let you run `vitest` with `npm test`. Let me know the results!
+
+--------------------------------------------------------------------------------
+
+USER:
+here is my vitest.config.ts and vitest.setup files for your revise
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+The config and setup files look correct, but let’s ensure you have the canonical versions in place. Copy–paste these into your project root, replacing the existing files:
+
+---
+
+**vitest.config.ts**  
+```ts
+import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: ['./vitest.setup.ts'],
+  },
+});
+```
+
+---
+
+**vitest.setup.ts**  
+```ts
+import '@testing-library/jest-dom';
+```
+
+---
+
+1. Verify they live at the same level as your `package.json`.  
+2. Reinstall deps (to pick up any new ones):  
+   ```bash
+   npm install --legacy-peer-deps
+   ```  
+3. Run the tests:  
+   ```bash
+   npm test
+   ```  
+
+Let me know the output!
+
+--------------------------------------------------------------------------------
+
+USER:
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10 (main)
+$ npm test
+
+> lab2-mod-10@0.0.0 test
+> vitest
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+ MISSING DEP  Can not find dependency 'jsdom'
+
+? Do you want to install jsdom? » (y/N)
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Run these two commands to install the missing JSDOM dependency and then re-run your tests:
+
+```bash
+npm install --save-dev jsdom --legacy-peer-deps
+npm test
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10 (main) 
+$ npm install --save-dev jsdom --legacy-peer-deps
+npm test
+
+added 37 packages, and audited 167 packages in 3s
+
+27 packages are looking for funding
+  run `npm fund` for details
+
+4 moderate severity vulnerabilities
+
+To address all issues (including breaking changes), run:
+  npm audit fix --force
+
+Run `npm audit` for details.
+
+> lab2-mod-10@0.0.0 test
+> vitest
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ DEV  v0.34.6 C:/Users/boliv/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10
+
+stderr | src/hooks/__tests__/usePagination.test.ts > usePagination hook > handles zero items
+`ReactDOMTestUtils.act` is deprecated in favor of `React.act`. Import `act` from `react` instead of `react-dom/test-utils`. See https://react.dev/warnings/react-dom-test-utils for more info.
+
+ ❯ src/hooks/__tests__/usePagination.test.ts (5)
+   ❯ usePagination hook (5)
+     × handles zero items
+     × calculates pages correctly with defaults
+     × nextPage and prevPage update currentPage within bounds
+     × setPage clamps to [1, totalPages]
+     × last page has correct start/end indices
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/hooks/__tests__/usePagination.test.ts > usePagination hook > handles zero items
+TypeError: ReactDOM.render is not a function
+ ❯ node_modules/@testing-library/react-hooks/lib/dom/pure.js:80:18
+ ❯ Object.process.env.NODE_ENV.exports.act node_modules/react/cjs/react.development.js:789:22
+ ❯ process.env.NODE_ENV.exports.act node_modules/react-dom/cjs/react-dom-test-utils.development.js:22:20       
+ ❯ render node_modules/@testing-library/react-hooks/lib/dom/pure.js:79:26
+ ❯ Proxy.renderHook node_modules/@testing-library/react-hooks/lib/core/index.js:114:5
+ ❯ src/hooks/__tests__/usePagination.test.ts:6:24
+      4| describe('usePagination hook', () => {
+      5|   it('handles zero items', () => {
+      6|     const { result } = renderHook(() => usePagination({ totalItems: 0 }));
+       |                        ^
+      7|     expect(result.current.totalPages).toBe(0);
+      8|     expect(result.current.currentPage).toBe(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  src/hooks/__tests__/usePagination.test.ts > usePagination hook > calculates pages correctly with defaults
+TypeError: ReactDOM.render is not a function
+ ❯ node_modules/@testing-library/react-hooks/lib/dom/pure.js:80:18
+ ❯ Object.process.env.NODE_ENV.exports.act node_modules/react/cjs/react.development.js:789:22
+ ❯ process.env.NODE_ENV.exports.act node_modules/react-dom/cjs/react-dom-test-utils.development.js:22:20       
+ ❯ render node_modules/@testing-library/react-hooks/lib/dom/pure.js:79:26
+ ❯ Proxy.renderHook node_modules/@testing-library/react-hooks/lib/core/index.js:114:5
+ ❯ src/hooks/__tests__/usePagination.test.ts:17:24
+     15|
+     16|   it('calculates pages correctly with defaults', () => {
+     17|     const { result } = renderHook(() => usePagination({ totalItems: 25 }));
+       |                        ^
+     18|     expect(result.current.totalPages).toBe(3);
+     19|     expect(result.current.startIndex).toBe(0);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  src/hooks/__tests__/usePagination.test.ts > usePagination hook > nextPage and prevPage update currentPage within bounds
+TypeError: ReactDOM.render is not a function
+ ❯ node_modules/@testing-library/react-hooks/lib/dom/pure.js:80:18
+ ❯ Object.process.env.NODE_ENV.exports.act node_modules/react/cjs/react.development.js:789:22
+ ❯ process.env.NODE_ENV.exports.act node_modules/react-dom/cjs/react-dom-test-utils.development.js:22:20       
+ ❯ render node_modules/@testing-library/react-hooks/lib/dom/pure.js:79:26
+ ❯ Proxy.renderHook node_modules/@testing-library/react-hooks/lib/core/index.js:114:5
+ ❯ src/hooks/__tests__/usePagination.test.ts:25:24
+     23|
+     24|   it('nextPage and prevPage update currentPage within bounds', () => {
+     25|     const { result } = renderHook(() => usePagination({ totalItems: 25 }));
+       |                        ^
+     26|     act(() => result.current.nextPage());
+     27|     expect(result.current.currentPage).toBe(2);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  src/hooks/__tests__/usePagination.test.ts > usePagination hook > setPage clamps to [1, totalPages]      
+TypeError: ReactDOM.render is not a function
+ ❯ node_modules/@testing-library/react-hooks/lib/dom/pure.js:80:18
+ ❯ Object.process.env.NODE_ENV.exports.act node_modules/react/cjs/react.development.js:789:22
+ ❯ process.env.NODE_ENV.exports.act node_modules/react-dom/cjs/react-dom-test-utils.development.js:22:20       
+ ❯ render node_modules/@testing-library/react-hooks/lib/dom/pure.js:79:26
+ ❯ Proxy.renderHook node_modules/@testing-library/react-hooks/lib/core/index.js:114:5
+ ❯ src/hooks/__tests__/usePagination.test.ts:36:24
+     34|
+     35|   it('setPage clamps to [1, totalPages]', () => {
+     36|     const { result } = renderHook(() => usePagination({ totalItems: 15, itemsPerPage: 5 }));
+       |                        ^
+     37|     act(() => result.current.setPage(5));
+     38|     expect(result.current.currentPage).toBe(3);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  src/hooks/__tests__/usePagination.test.ts > usePagination hook > last page has correct start/end indices
+TypeError: ReactDOM.render is not a function
+ ❯ node_modules/@testing-library/react-hooks/lib/dom/pure.js:80:18
+ ❯ Object.process.env.NODE_ENV.exports.act node_modules/react/cjs/react.development.js:789:22
+ ❯ process.env.NODE_ENV.exports.act node_modules/react-dom/cjs/react-dom-test-utils.development.js:22:20       
+ ❯ render node_modules/@testing-library/react-hooks/lib/dom/pure.js:79:26
+ ❯ Proxy.renderHook node_modules/@testing-library/react-hooks/lib/core/index.js:114:5
+ ❯ src/hooks/__tests__/usePagination.test.ts:44:24
+     42|
+     43|   it('last page has correct start/end indices', () => {
+     44|     const { result } = renderHook(() => usePagination({ totalItems: 12, itemsPerPage: 5 }));
+       |                        ^
+     45|     act(() => result.current.setPage(3));
+     46|     expect(result.current.startIndex).toBe(10);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+ Test Files  1 failed (1)
+      Tests  5 failed (5)
+   Start at  21:31:53
+   Duration  1.67s (transform 74ms, setup 207ms, collect 73ms, tests 14ms, environment 876ms, prepare 154ms)   
+
+
+ FAIL  Tests failed. Watching for file changes...
+       press h to show help, press q to quit
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+To get `ReactDOM.render` back (so the hook tests can mount under React Testing Library), let’s downgrade to React 17, which that version of `@testing-library/react-hooks` supports. Just copy–paste these edits:
+
+---
+
+1. **Replace your `package.json` dependencies** with React 17:
+
+```diff
+ "dependencies": {
+-   "react": "^19.1.0",
+-   "react-dom": "^19.1.0"
++   "react": "^17.0.2",
++   "react-dom": "^17.0.2"
+ },
+```
+
+2. **Reinstall** (using legacy peer deps to avoid conflicts):
+
+```bash
+npm install --legacy-peer-deps
+```
+
+3. **Re-run tests**:
+
+```bash
+npm test
+```
+
+With React 17, `ReactDOM.render` exists again and your `usePagination` tests should pass. Let me know the output!
+
+--------------------------------------------------------------------------------
+
+USER:
+do the full copy and paste for the fies
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Overwrite your **`package.json`** with this complete content (note the React 17 dependencies):
+
+```json
+{
+  "name": "lab2-mod-10",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  },
+  "devDependencies": {
+    "@testing-library/react-hooks": "^8.0.1",
+    "@testing-library/jest-dom": "^6.0.1",
+    "@testing-library/user-event": "^14.0.0",
+    "vitest": "^0.34.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.0",
+    "jsdom": "^21.0.0"
+  }
+}
+```
+
+Then reinstall with legacy peer deps and re-run tests:
+
+```bash
+npm install --legacy-peer-deps
+npm test
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+RERUN  x7
+
+ ✓ src/hooks/__tests__/usePagination.test.ts (5)
+   ✓ usePagination hook (5)
+     ✓ handles zero items
+     ✓ calculates pages correctly with defaults
+     ✓ nextPage and prevPage update currentPage within bounds
+     ✓ setPage clamps to [1, totalPages]
+     ✓ last page has correct start/end indices
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  21:39:25
+   Duration  152ms
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10 (main)
+$
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+{"name": "useDebounce.ts", "type": "code/typescript", "content": "import { useState, useEffect } from 'react';\n\n/**\n * Custom Hook: useDebounce\n * Debounces a rapidly changing value by delaying its update until after the specified delay.\n *\n * @param value The value to debounce (e.g., input text).\n * @param delay Milliseconds to wait before updating debounced value (default: 500).\n * @returns The debounced value.\n */\nexport function useDebounce<T>(value: T, delay: number = 500): T {\n  const [debouncedValue, setDebouncedValue] = useState<T>(value);\n\n  useEffect(() => {\n    const handler = setTimeout(() => {\n      setDebouncedValue(value);\n    }, delay);\n\n    return () => {\n      clearTimeout(handler);\n    };\n  }, [value, delay]);\n\n  return debouncedValue;\n}"}
+
+--------------------------------------------------------------------------------
+
+TOOL:
+Successfully created text document 'Use Debounce' which will be referenced in all future messages with the unique identifier textdoc_id: '685ca4e38874819182d6067cc285d112'
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+The `useDebounce` hook has been implemented in **src/hooks/useDebounce.ts**.  
+
+Next step: let’s add and run tests for this hook. Would you like a test suite for `useDebounce` now?
+
+--------------------------------------------------------------------------------
+
+USER:
+yes
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+# Creating test suite for useDebounce hook
+
+test_code = """
+// src/hooks/__tests__/useDebounce.test.ts
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useDebounce } from '../useDebounce';
+
+describe('useDebounce hook', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('initially returns the immediate value and updates after the specified delay', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      {
+        initialProps: { value: 'hello', delay: 500 },
+      }
+    );
+
+    // Initially, debouncedValue equals the initial value
+    expect(result.current).toBe('hello');
+
+    // Update the input value
+    rerender({ value: 'world', delay: 500 });
+
+    // Advance timers just before the delay
+    act(() => {
+      vi.advanceTimersByTime(499);
+    });
+    expect(result.current).toBe('hello');
+
+    // Advance by the last millisecond
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current).toBe('world');
+  });
+
+  it('cancels previous timer when value changes rapidly', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      {
+        initialProps: { value: 'A', delay: 300 },
+      }
+    );
+
+    // Change value to B, then quickly to C before timer fires
+    rerender({ value: 'B', delay: 300 });
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    rerender({ value: 'C', delay: 300 });
+
+    // Advance time beyond the first timer (should have been cancelled)
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    // Should still be the original value
+    expect(result.current).toBe('A');
+
+    // Advance final time for the last update
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(result.current).toBe('C');
+  });
+
+  it('respects changes in delay parameter', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      {
+        initialProps: { value: 'X', delay: 100 },
+      }
+    );
+
+    // Change delay to longer interval
+    rerender({ value: 'Y', delay: 200 });
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+    // Should not update yet
+    expect(result.current).toBe('X');
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    expect(result.current).toBe('Y');
+  });
+});
+"""
+
+file_path = '/mnt/data/useDebounce_test.ts'
+with open(file_path, 'w') as f:
+    f.write(test_code)
+
+file_path
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+I’ve drafted the `useDebounce` tests in **src/hooks/__tests__/useDebounce.test.ts**. Here’s the full copy-and-paste:
+
+```ts
+// src/hooks/__tests__/useDebounce.test.ts
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useDebounce } from '../useDebounce';
+
+describe('useDebounce hook', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('initially returns the immediate value and updates after the specified delay', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      {
+        initialProps: { value: 'hello', delay: 500 },
+      }
+    );
+
+    expect(result.current).toBe('hello');
+
+    rerender({ value: 'world', delay: 500 });
+
+    act(() => {
+      vi.advanceTimersByTime(499);
+    });
+    expect(result.current).toBe('hello');
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current).toBe('world');
+  });
+
+  it('cancels previous timer when value changes rapidly', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      {
+        initialProps: { value: 'A', delay: 300 },
+      }
+    );
+
+    rerender({ value: 'B', delay: 300 });
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    rerender({ value: 'C', delay: 300 });
+
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    expect(result.current).toBe('A');
+
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(result.current).toBe('C');
+  });
+
+  it('respects changes in delay parameter', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      {
+        initialProps: { value: 'X', delay: 100 },
+      }
+    );
+
+    rerender({ value: 'Y', delay: 200 });
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+    expect(result.current).toBe('X');
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    expect(result.current).toBe('Y');
+  });
+});
+```
+
+After saving this file:
+
+1. Ensure it’s located at `src/hooks/__tests__/useDebounce.test.ts`.
+2. Run:
+
+```bash
+npm test
+```
+
+to verify all `useDebounce` tests pass. Let me know the results!
+
+--------------------------------------------------------------------------------
+
+USER:
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10 (main)
+$ npm test
+
+> lab2-mod-10@0.0.0 test
+> vitest
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ DEV  v0.34.6 C:/Users/boliv/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10
+
+ ✓ src/hooks/__tests__/usePagination.test.ts (5)
+   ✓ usePagination hook (5)
+     ✓ handles zero items
+     ✓ calculates pages correctly with defaults
+     ✓ nextPage and prevPage update currentPage within bounds
+     ✓ setPage clamps to [1, totalPages]
+     ✓ last page has correct start/end indices
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  21:42:11
+   Duration  980ms (transform 52ms, setup 109ms, collect 57ms, tests 17ms, environment 449ms, prepare 101ms)   
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Create the test file in the proper location and re-run:
+
+1. **Copy-paste this to** `src/hooks/__tests__/useDebounce.test.ts`:
+
+```ts
+// src/hooks/__tests__/useDebounce.test.ts
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useDebounce } from '../useDebounce';
+
+describe('useDebounce hook', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('initially returns the immediate value and updates after the specified delay', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      {
+        initialProps: { value: 'hello', delay: 500 },
+      }
+    );
+
+    expect(result.current).toBe('hello');
+
+    rerender({ value: 'world', delay: 500 });
+
+    act(() => {
+      vi.advanceTimersByTime(499);
+    });
+    expect(result.current).toBe('hello');
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(result.current).toBe('world');
+  });
+
+  it('cancels previous timer when value changes rapidly', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      {
+        initialProps: { value: 'A', delay: 300 },
+      }
+    );
+
+    rerender({ value: 'B', delay: 300 });
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    rerender({ value: 'C', delay: 300 });
+
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    expect(result.current).toBe('A');
+
+    act(() => {
+      vi.advanceTimersByTime(100);
+    });
+    expect(result.current).toBe('C');
+  });
+
+  it('respects changes in delay parameter', () => {
+    const { result, rerender } = renderHook(
+      ({ value, delay }) => useDebounce(value, delay),
+      {
+        initialProps: { value: 'X', delay: 100 },
+      }
+    );
+
+    rerender({ value: 'Y', delay: 200 });
+
+    act(() => {
+      vi.advanceTimersByTime(150);
+    });
+    expect(result.current).toBe('X');
+
+    act(() => {
+      vi.advanceTimersByTime(50);
+    });
+    expect(result.current).toBe('Y');
+  });
+});
+```
+
+2. **Run**:
+```bash
+npm test
+```
+
+You should now see all `useDebounce` tests pass alongside `usePagination`.
+
+--------------------------------------------------------------------------------
+
+USER:
+boliv@RVHB MINGW64 ~/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10 (main)
+$ npm test
+
+> lab2-mod-10@0.0.0 test
+> vitest
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ DEV  v0.34.6 C:/Users/boliv/OneDrive/Desktop/2025-RTT-23/mod-10-labs/lab2-mod-10
+
+ ✓ src/hooks/__tests__/usePagination.test.ts (5)
+ ✓ src/hooks/__tests__/useDebounce.test.ts (3)
+
+ Test Files  2 passed (2)
+      Tests  8 passed (8)
+   Start at  21:43:52
+   Duration  1.05s (transform 73ms, setup 232ms, collect 127ms, tests 37ms, environment 1.00s, prepare 233ms)  
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+# Update To-Do list for remaining tasks
+
+tasks_final = [
+    "1. Commit all hook implementations, tests, and demo component code to GitHub.",
+    "2. Submit project via Canvas with GitHub link to the repository."
+]
+
+with open('/mnt/data/chatGPT_Todo.txt', 'w') as f:
+    f.write("\n".join(tasks_final))
+
+# Display updated To-Do for user verification
+import ace_tools as tools; import pandas as pd
+df = pd.DataFrame(tasks_final, columns=["Remaining Tasks"])
+tools.display_dataframe_to_user("Updated To-Do List", df)
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+I’ve streamlined our To-Do list to the final two steps:
+
+| Remaining Tasks                                                         |
+|-------------------------------------------------------------------------|
+| 1. Commit all hook implementations, tests, and demo component code to GitHub. |
+| 2. Submit project via Canvas with GitHub link to the repository.         |
+
+[Download updated chatGPT_Todo.txt](sandbox:/mnt/data/chatGPT_Todo.txt)
+
+Let me know once you’ve committed and are ready to submit!
+
+--------------------------------------------------------------------------------
+
+USER:
+do we have a front end to see the results
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Yes—let’s wire up a simple App that renders both demos. Copy-and-paste these files into your `src/` folder:
+
+---
+
+**`src/App.tsx`**  
+```tsx
+import React from 'react';
+import { PaginationDemo } from './components/PaginationDemo';
+import { DebounceSearchDemo } from './components/DebounceSearchDemo';
+
+export default function App() {
+  return (
+    <div style={{ padding: '2rem', fontFamily: 'sans-serif' }}>
+      <h1>Lab 2: Custom Hooks Demo</h1>
+
+      <section style={{ marginBottom: '3rem' }}>
+        <PaginationDemo />
+      </section>
+
+      <hr />
+
+      <section style={{ marginTop: '3rem' }}>
+        <DebounceSearchDemo />
+      </section>
+    </div>
+  );
+}
+```
+
+---
+
+**`src/main.tsx`**  
+```ts
+import React from 'react';
+import ReactDOM from 'react-dom';
+import App from './App';
+
+ReactDOM.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+  document.getElementById('root')
+);
+```
+
+---
+
+Make sure your **`index.html`** (in the project root) has:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="/favicon.ico" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lab 2 Hooks Demo</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
+```
+
+Now run:
+```bash
+npm run dev
+```
+and open the local server URL (usually http://localhost:5173) to see both the pagination and debounced-search demos in your browser.
+
+--------------------------------------------------------------------------------
+
+USER:
+done
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Great—the demos are up and running. Next is committing everything to your GitHub repo. Would you like me to provide the exact Git commands to stage, commit, and push all changes, or is there anything you’d like to tweak in the UI first?
+
+--------------------------------------------------------------------------------
+
+USER:
+can you make a modern minimalist elegat UI for this
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here’s a simple, modern-minimalist styling you can drop in. Just create a CSS file and tweak the components to use these classes.
+
+---
+
+**1) Create `src/App.css`** and paste:
+
+```css
+/* src/App.css */
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: #f7f7f7;
+  color: #333;
+}
+
+h1 {
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.card {
+  background: #fff;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-bottom: 2rem;
+}
+
+.button {
+  border: 1px solid #ccc;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  margin: 0 0.25rem;
+  transition: background 0.2s;
+}
+
+.button:hover:not(:disabled) {
+  background: rgba(0,0,0,0.05);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input, select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 0.5rem;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #333;
+}
+
+.section-title {
+  margin-bottom: 1rem;
+  font-size: 1.25rem;
+}
+```
+
+---
+
+**2) Import it in your entry point** (e.g. in **`src/main.tsx`** or **`src/App.tsx`**, add at the top):
+
+```ts
+import './App.css';
+```
+
+---
+
+**3) Update `src/App.tsx`** to use cards:
+
+```tsx
+import React from 'react';
+import { PaginationDemo } from './components/PaginationDemo';
+import { DebounceSearchDemo } from './components/DebounceSearchDemo';
+import './App.css';
+
+export default function App() {
+  return (
+    <div style={{ padding: '2rem' }}>
+      <h1>Lab 2: Custom Hooks Demo</h1>
+
+      <div className="card">
+        <h2 className="section-title">Pagination Demo</h2>
+        <PaginationDemo />
+      </div>
+
+      <div className="card">
+        <h2 className="section-title">Debounce Search Demo</h2>
+        <DebounceSearchDemo />
+      </div>
+    </div>
+  );
+}
+```
+
+---
+
+**4) Update `src/components/PaginationDemo.tsx`**:
+
+```tsx
+import React from 'react';
+import { usePagination } from '../hooks/usePagination';
+
+export function PaginationDemo() {
+  const totalItems = 123;
+  const {
+    currentPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    itemsOnCurrentPage,
+    nextPage,
+    prevPage,
+    canNextPage,
+    canPrevPage,
+    setPage,
+  } = usePagination({ totalItems, itemsPerPage: 10 });
+
+  const items = Array.from({ length: totalItems }, (_, i) => `Item ${i + 1}`).slice(startIndex, endIndex + 1);
+
+  return (
+    <div>
+      <ul>
+        {items.map(item => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+
+      <div style={{ marginTop: '1rem' }}>
+        <button className="button" onClick={prevPage} disabled={!canPrevPage}>
+          Previous
+        </button>
+        <span> Page {currentPage} of {totalPages} </span>
+        <button className="button" onClick={nextPage} disabled={!canNextPage}>
+          Next
+        </button>
+      </div>
+
+      <div style={{ marginTop: '1rem' }}>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i}
+            className="button"
+            onClick={() => setPage(i + 1)}
+            disabled={currentPage === i + 1}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </div>
+
+      <p style={{ marginTop: '1rem' }}>
+        Showing items {startIndex + 1}–{endIndex + 1} (Total on this page: {itemsOnCurrentPage})
+      </p>
+    </div>
+  );
+}
+```
+
+---
+
+**5) Update `src/components/DebounceSearchDemo.tsx`**:
+
+```tsx
+import React, { useState, useEffect } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
+
+export function DebounceSearchDemo() {
+  const [input, setInput] = useState('');
+  const debounced = useDebounce(input, 500);
+
+  useEffect(() => {
+    if (debounced) {
+      console.log(`Searching for: ${debounced}`);
+    }
+  }, [debounced]);
+
+  return (
+    <div>
+      <label>
+        Search:
+        <input
+          type="text"
+          placeholder="Type to search..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+        />
+      </label>
+
+      <p style={{ marginTop: '1rem' }}>Current Input: {input}</p>
+      <p>Debounced Value: {debounced}</p>
+    </div>
+  );
+}
+```
+
+---
+
+Restart your dev server:
+
+```bash
+npm run dev
+```
+
+You’ll now see each demo in a clean, white “card” on a light-gray background with elegant, minimal controls. Let me know if you’d like any palette tweaks!
+
+--------------------------------------------------------------------------------
+
+USER:
+check that this is complying with the labs goal and instructions
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+The UI you’ve got perfectly satisfies the lab requirements:
+
+- **Pagination Demo**  
+  - Shows a paginated slice of 123 items in groups of 10  
+  - “Previous”/“Next” buttons disabled at bounds  
+  - Numeric page buttons invoking `setPage`  
+  - Correct display of “Page X of Y” and “Showing items A–B (Total on this page: N)”
+
+- **Debounce Search Demo**  
+  - Text input for the user’s raw value  
+  - Live display of `input` and debounced value  
+  - Console log on debounced‐value change (you can see the logs in your DevTools)
+
+All functional objectives are met, and your minimalist “card” styling keeps the focus on functionality, as the prompt intended. 
+
+If you’d like to also expose the debounce delay or items-per-page controls (as shown in the example solution), let me know and I can wire those in—but strictly speaking, you’ve complied with every core lab instruction.
+
+--------------------------------------------------------------------------------
+
+USER:
+do  expose the debounce delay or items-per-page controls
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Below are the updated components with controls for both debounce delay and items-per-page. Just overwrite your existing component files with these.
+
+---
+
+### `src/components/PaginationDemo.tsx`
+
+```tsx
+import React, { useState } from 'react';
+import { usePagination } from '../hooks/usePagination';
+
+export function PaginationDemo() {
+  const totalItems = 123;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const {
+    currentPage,
+    totalPages,
+    startIndex,
+    endIndex,
+    itemsOnCurrentPage,
+    nextPage,
+    prevPage,
+    canNextPage,
+    canPrevPage,
+    setPage,
+  } = usePagination({ totalItems, itemsPerPage });
+
+  const items = Array
+    .from({ length: totalItems }, (_, i) => `Item ${i + 1}`)
+    .slice(startIndex, endIndex + 1);
+
+  return (
+    <div>
+      <label style={{ display: 'block', marginBottom: '1rem' }}>
+        Items per page:&nbsp;
+        <select
+          value={itemsPerPage}
+          onChange={e => setItemsPerPage(Number(e.target.value))}
+        >
+          {[5, 10, 20, 50].map(n => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+      </label>
+
+      <ul>
+        {items.map(item => <li key={item}>{item}</li>)}
+      </ul>
+
+      <div style={{ marginTop: '1rem' }}>
+        <button className="button" onClick={prevPage} disabled={!canPrevPage}>
+          Previous
+        </button>
+        <span> Page {currentPage} of {totalPages} </span>
+        <button className="button" onClick={nextPage} disabled={!canNextPage}>
+          Next
+        </button>
+      </div>
+
+      <div style={{ marginTop: '1rem' }}>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i}
+            className="button"
+            onClick={() => setPage(i + 1)}
+            disabled={currentPage === i + 1}
+          >
+            {i + 1}
+          </button>
+        ))}
+      </div>
+
+      <p style={{ marginTop: '1rem' }}>
+        Showing items {startIndex + 1}–{endIndex + 1} (Total on this page: {itemsOnCurrentPage})
+      </p>
+    </div>
+  );
+}
+```
+
+---
+
+### `src/components/DebounceSearchDemo.tsx`
+
+```tsx
+import React, { useState, useEffect } from 'react';
+import { useDebounce } from '../hooks/useDebounce';
+
+export function DebounceSearchDemo() {
+  const [input, setInput] = useState('');
+  const [delay, setDelay] = useState(500);
+  const debounced = useDebounce(input, delay);
+
+  useEffect(() => {
+    if (debounced) {
+      console.log(`Searching for: ${debounced}`);
+    }
+  }, [debounced]);
+
+  return (
+    <div>
+      <label style={{ display: 'block', marginBottom: '1rem' }}>
+        Debounce Delay (ms):&nbsp;
+        <input
+          type="number"
+          min={0}
+          step={100}
+          value={delay}
+          onChange={e => setDelay(Number(e.target.value))}
+        />
+      </label>
+
+      <label style={{ display: 'block', marginBottom: '1rem' }}>
+        Search:&nbsp;
+        <input
+          type="text"
+          placeholder="Type to search..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+        />
+      </label>
+
+      <p>Current Input: {input || <em>(empty)</em>}</p>
+      <p>Debounced Value: {debounced || <em>(waiting…)</em>}</p>
+    </div>
+  );
+}
+```
+
+---
+
+After pasting these, restart your dev server (`npm run dev`) and you’ll see:
+
+- A dropdown to change items-per-page live in the pagination demo.
+- A number input to adjust debounce delay on the fly.
+
+Let me know how it looks!
+
+--------------------------------------------------------------------------------
+
+USER:
+perfect
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+# Update To-Do list to just submission step
+tasks_final = [
+    "Submit project via Canvas with GitHub link to the repository."
+]
+with open('/mnt/data/chatGPT_Todo.txt', 'w') as f:
+    f.write("\n".join(tasks_final))
+
+import ace_tools as tools, pandas as pd
+df = pd.DataFrame(tasks_final, columns=["Remaining Task"])
+tools.display_dataframe_to_user("Updated To-Do List", df)
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+To commit everything and prepare for submission, run:
+
+```bash
+git add .
+git commit -m "feat: add UI controls for items-per-page and debounce delay"
+git push origin main
+```
+
+Once pushed, you can submit via Canvas using your repository URL.
+
+[Download updated chatGPT_Todo.txt](sandbox:/mnt/data/chatGPT_Todo.txt)
+
+--------------------------------------------------------------------------------
+
+USER:
+lets do a milestone commit as far everything is working so if we make any changes we can revert to this point, sound s good
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Sounds good. Let’s create a milestone branch so we can always revert here:
+
+```bash
+# Ensure all changes are committed
+git add .
+git commit -m "chore: milestone – Lab2 custom hooks complete"
+
+# Create and push a milestone branch
+git branch lab2-milestone
+git push -u origin lab2-milestone
+```
+
+Now you have `lab2-milestone` as a safe restore point.
+
+--------------------------------------------------------------------------------
+

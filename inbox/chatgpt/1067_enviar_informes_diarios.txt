@@ -1,0 +1,115 @@
+Title: Enviar Informes Diarios
+Created: 2024-08-14 18:56:26
+Updated: 2024-08-14 18:56:46
+================================================================================
+
+USER:
+Escribe un script para enviar automáticamente informes diarios por correo electrónico en Python y explícame los pasos para configurarlo.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Aquí tienes un script en Python para enviar automáticamente informes diarios por correo electrónico utilizando la biblioteca `smtplib` y `email`. Además, te explicaré los pasos para configurarlo.
+
+### Script en Python:
+
+```python
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+import os
+from datetime import datetime
+
+# Configuración del servidor SMTP
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 587
+EMAIL = 'tucorreo@gmail.com'
+PASSWORD = 'tucontraseña'
+
+# Configuración del correo electrónico
+DESTINATARIO = 'destinatario@example.com'
+ASUNTO = f'Informe Diario - {datetime.now().strftime("%Y-%m-%d")}'
+CUERPO = 'Por favor, encuentre adjunto el informe diario.'
+
+# Ruta del archivo de informe
+RUTA_INFORME = 'ruta/del/informe/informe_diario.pdf'
+
+def enviar_informe():
+    # Crear la estructura del mensaje
+    mensaje = MIMEMultipart()
+    mensaje['From'] = EMAIL
+    mensaje['To'] = DESTINATARIO
+    mensaje['Subject'] = ASUNTO
+
+    # Adjuntar el cuerpo del mensaje
+    mensaje.attach(MIMEText(CUERPO, 'plain'))
+
+    # Adjuntar el informe
+    if os.path.exists(RUTA_INFORME):
+        adjunto = open(RUTA_INFORME, 'rb')
+        mime_base = MIMEBase('application', 'octet-stream')
+        mime_base.set_payload(adjunto.read())
+        encoders.encode_base64(mime_base)
+        mime_base.add_header('Content-Disposition', f'attachment; filename={os.path.basename(RUTA_INFORME)}')
+        mensaje.attach(mime_base)
+        adjunto.close()
+    else:
+        print("No se encontró el archivo de informe.")
+
+    # Conectar al servidor SMTP y enviar el correo
+    try:
+        servidor = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        servidor.starttls()
+        servidor.login(EMAIL, PASSWORD)
+        texto = mensaje.as_string()
+        servidor.sendmail(EMAIL, DESTINATARIO, texto)
+        servidor.quit()
+        print("Correo enviado exitosamente.")
+    except Exception as e:
+        print(f"Error al enviar el correo: {str(e)}")
+
+if __name__ == "__main__":
+    enviar_informe()
+```
+
+### Explicación de los pasos para configurarlo:
+
+1. **Instalar Python y las bibliotecas necesarias**:
+   - Asegúrate de tener Python instalado en tu máquina.
+   - La biblioteca `smtplib` y `email` vienen preinstaladas con Python, por lo que no necesitas instalar nada adicional.
+
+2. **Configurar el servidor SMTP**:
+   - Cambia el valor de `SMTP_SERVER` y `SMTP_PORT` si usas un proveedor de correo diferente a Gmail. Para Gmail, los valores son:
+     - `SMTP_SERVER = 'smtp.gmail.com'`
+     - `SMTP_PORT = 587`
+   - Si usas Gmail, es posible que necesites permitir el acceso de aplicaciones menos seguras o crear una contraseña de aplicación desde tu cuenta de Google.
+
+3. **Configurar las credenciales de correo electrónico**:
+   - Reemplaza `tucorreo@gmail.com` con tu dirección de correo electrónico y `tucontraseña` con tu contraseña o una contraseña de aplicación.
+
+4. **Configurar el destinatario y el contenido del correo**:
+   - Cambia `DESTINATARIO` por la dirección de correo electrónico a la que deseas enviar el informe.
+   - Modifica `ASUNTO` y `CUERPO` según necesites.
+
+5. **Especificar la ruta del archivo de informe**:
+   - Asegúrate de que `RUTA_INFORME` apunte a la ubicación correcta del archivo que deseas enviar.
+
+6. **Programar la ejecución automática**:
+   - Si deseas que este script se ejecute automáticamente todos los días, puedes utilizar un programador de tareas como `cron` en Linux o el Programador de Tareas en Windows. Aquí un ejemplo para Linux:
+     - Abre la terminal y escribe `crontab -e`.
+     - Añade una línea como esta para ejecutarlo todos los días a las 9 AM:
+       ```
+       0 9 * * * /usr/bin/python3 /ruta/del/script/enviar_informe.py
+       ```
+     - Guarda y cierra el archivo.
+
+### Consideraciones finales:
+- Asegúrate de proteger tus credenciales de correo. Una opción más segura sería usar variables de entorno para almacenar el correo y la contraseña en lugar de incluirlas directamente en el código.
+- Prueba el script manualmente antes de programarlo para asegurarte de que todo funcione correctamente.
+
+Esto debería ser suficiente para configurar un envío automático de informes diarios por correo electrónico en Python.
+
+--------------------------------------------------------------------------------
+

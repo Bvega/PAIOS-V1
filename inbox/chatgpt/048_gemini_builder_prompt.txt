@@ -1,0 +1,278 @@
+Title: Gemini Builder prompt
+Created: 2025-10-28 16:58:19
+Updated: 2025-10-28 17:03:22
+================================================================================
+
+USER:
+make a  prompt with all the necesary information from this project so gemini builder make the task
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Here’s a single, copy-paste “Builder Prompt” you can drop into Gemini to generate a turnkey MERN project exactly in the style we’ve been using.
+
+---
+
+# GEMINI BUILDER PROMPT — “Seven Teas” (MERN, React+TS, Tailwind)
+
+**Role:** You are a senior full-stack engineer and teacher. Build a production-ready, well-documented MERN application and explain each step so a beginner can follow. Always provide fully copy-pasteable code, add clear inline comments, commit after every stage, and generate both `README.md` and `TUTORIAL.md`. Use VS Code as the editor. Stack: React + TypeScript + TailwindCSS on the client; Node.js + Express + MongoDB on the server.
+
+---
+
+## 1) Project Overview
+
+- **Name:** Seven Teas — Luxury Tea Landing & E-Commerce MVP  
+- **Purpose:** A polished landing + lightweight store for 7 signature teas. Users can browse products, view details, add to cart, and complete a **Stripe test** checkout (or fallback to a “Request Order” form if Stripe keys aren’t provided). Includes newsletter signup and contact form.  
+- **Tech stack/tools:**  
+  - Frontend: **React 18 + TypeScript + Vite**, **TailwindCSS**, **shadcn/ui**, **lucide-react**  
+  - Backend: **Node 22 + Express**, **MongoDB/Mongoose**  
+  - Auth (optional MVP): **JWT** email+password or magic link (optional)  
+  - Payments: **Stripe Checkout** (test mode) — optional route if keys present  
+  - Email/newsletter: **Resend** or **Mailchimp** (choose one; provide both paths in docs)  
+  - Media: **Cloudinary** (optional)  
+  - Tooling: **ESLint + Prettier**, **Git** with staged commits, **Husky** precommit (optional)  
+  - Deployment: Frontend **Netlify/Vercel**, Backend **Render/Railway**, DB **MongoDB Atlas**  
+- **Design goals:** Fast, responsive, accessible (WCAG-minded), minimal luxury aesthetic.
+
+> If a file named **`seven_teas_site.zip`** (assets/branding) is provided by the user, place its images under `client/public/images/` and use them in the UI. Otherwise generate tasteful placeholders.
+
+---
+
+## 2) Deliverables (must produce all)
+
+1. **Monorepo layout**
+   ```
+   seven-teas/
+     client/  (React+TS+Vite+Tailwind)
+     server/  (Node/Express/Mongoose)
+     .env.example
+     README.md
+     TUTORIAL.md
+   ```
+2. **Fully working code** with inline comments and copy-paste blocks.
+3. **Git history**: commit after each stage with descriptive messages.
+4. **Seed data** for 7 teas (name, slug, description, tasting notes, origin, price, image).
+5. **API docs** (in README) for all endpoints.
+6. **.env.example** with instructions.
+7. **Deployment instructions** (Netlify/Vercel + Render/Railway) with environment setup.
+8. **ZIP note**: Provide a section explaining how to zip/export the repo for sharing.
+
+---
+
+## 3) Functional Requirements
+
+### Public UX
+- **Landing/Hero**: brand tagline, CTA to “Shop the Seven”.  
+- **Product Grid**: 7 teas with image, price, short notes.  
+- **Product Page/Modal**: full description, origin, brew tips, add-to-cart.  
+- **Cart Drawer/Page**: adjust qty, remove items, subtotal, proceed to checkout.  
+- **Checkout**: 
+  - If `STRIPE_SECRET_KEY` and `STRIPE_PRICE_IDS` exist → Stripe Checkout (test).  
+  - Else → “Request Order” form (name/email/phone/message) → email via Resend (or Mailchimp tag capture).  
+- **Newsletter Signup**: email capture via Resend or Mailchimp.  
+- **Contact Form**: name/email/message → send email via Resend (fallback: log to server).  
+- **Footer**: social links, policy links (stubs).
+
+### Admin (MVP, minimal)
+- Protected `/admin` (basic JWT login if enabled in `.env`) with simple **CRUD** for teas: create/edit/delete, image URL, price, publish toggle.
+
+---
+
+## 4) Data & API
+
+### Models (Mongoose)
+- **Tea**: `{ name, slug, description, origin, notes: string[], price: number, imageUrl, isPublished: boolean, createdAt }`
+- **Order** (optional if Stripe): `{ items: [{ teaId, qty, unitPrice }], email, amount, stripeSessionId, status }`
+- **User** (optional admin): `{ email, passwordHash, role }`
+
+### REST Endpoints
+- `GET /api/teas` → list published teas  
+- `GET /api/teas/:slug` → single tea  
+- `POST /api/cart/checkout` → if Stripe configured, create Checkout Session and return URL  
+- `POST /api/contact` → send contact email (Resend), validate inputs  
+- `POST /api/newsletter` → subscribe via Resend/Mailchimp  
+- **Admin** (JWT-protected if enabled):  
+  - `POST /api/auth/login` → returns token  
+  - `POST /api/teas` | `PUT /api/teas/:id` | `DELETE /api/teas/:id`
+
+> Include **Zod** or a simple validator middleware for request payloads.
+
+---
+
+## 5) Frontend Architecture
+
+- **Vite + React + TS**  
+- **Routing**: `react-router-dom`  
+- **State**: lightweight cart via `zustand` or React Context (explain choice)  
+- **UI**: Tailwind + shadcn/ui (Buttons, Cards, Dialog/Sheet for Cart, Input, Textarea)  
+- **Pages/Components**  
+  ```
+  src/
+    main.tsx, app.tsx
+    routes/
+      Home.tsx
+      Product.tsx
+      Checkout.tsx
+      AdminLogin.tsx
+      AdminDashboard.tsx
+    components/
+      Header.tsx
+      Footer.tsx
+      TeaCard.tsx
+      TeaGrid.tsx
+      ProductDetail.tsx
+      CartDrawer.tsx
+      NewsletterForm.tsx
+      ContactForm.tsx
+    lib/
+      api.ts (fetch helpers)
+      types.ts
+      store.ts (cart state)
+  ```
+- **Styling**: Provide a minimal luxury palette and typography; ensure mobile-first responsiveness.
+
+---
+
+## 6) Environment & Config
+
+Create **`.env.example`** at repo root with:
+```
+# Server
+PORT=5000
+MONGODB_URI=
+JWT_SECRET= # optional if admin enabled
+
+# Emails (choose one path in README)
+RESEND_API_KEY=
+RESEND_FROM_EMAIL=
+
+# or Mailchimp (for newsletter)
+MAILCHIMP_API_KEY=
+MAILCHIMP_AUDIENCE_ID=
+MAILCHIMP_SERVER_PREFIX=
+
+# Stripe (optional for real checkout)
+STRIPE_SECRET_KEY=
+STRIPE_SUCCESS_URL=http://localhost:5173/success
+STRIPE_CANCEL_URL=http://localhost:5173/cart
+# Map tea slugs to price IDs in code or via env (doc it)
+```
+Explain how to copy to `.env` locally and on hosting providers.
+
+---
+
+## 7) Phased Plan with Git Commits
+
+**Stage 0 — Initialize**
+- Create monorepo, `client` (Vite React TS), `server` (Express TS or JS with types).  
+- Add Tailwind, shadcn/ui setup.  
+- Commit: `chore: scaffold MERN monorepo with React+TS, Tailwind, Express`
+
+**Stage 1 — Domain & Models**
+- Mongoose connection, `Tea` model + seed script with 7 teas.  
+- Commit: `feat(server): tea model and seed data for 7 products`
+
+**Stage 2 — Public API**
+- `GET /api/teas`, `GET /api/teas/:slug`, validators, error handler.  
+- Commit: `feat(server): public tea endpoints with validation`
+
+**Stage 3 — UI Shell & Grid**
+- Header/Footer, Home hero, `TeaGrid`, `TeaCard`.  
+- Commit: `feat(client): home + product grid and basic layout`
+
+**Stage 4 — Product & Cart**
+- `ProductDetail`, `CartDrawer` (zustand/Context), add/remove/update, totals.  
+- Commit: `feat(client): product detail and cart state`
+
+**Stage 5 — Checkout Paths**
+- Stripe Checkout session route + client integration **or** Request Order form.  
+- Commit: `feat: checkout via Stripe (conditional) and fallback request form`
+
+**Stage 6 — Newsletter & Contact**
+- `/api/newsletter`, `/api/contact`, front-end forms with success/error handling.  
+- Commit: `feat: newsletter and contact pipelines (Resend/Mailchimp)`
+
+**Stage 7 — Admin (Optional)**
+- JWT login, admin CRUD pages.  
+- Commit: `feat(admin): minimal JWT auth and tea CRUD`
+
+**Stage 8 — Polish & Deploy**
+- SEO tags, favicons, 404, accessibility pass, README/TUTORIAL, deployment.  
+- Commit: `docs: complete README, TUTORIAL and deployment guides`
+
+---
+
+## 8) Best Practices to Apply
+
+- Defensive validation on all inputs  
+- Error boundary on client; global error handler on server  
+- CORS config for dev; secure headers in prod  
+- Accessible components (labels, focus states)  
+- Performance: image dimensions, lazy loading, proper caching headers  
+- Lint + format; consistent absolute imports; `.nvmrc` for Node version
+
+---
+
+## 9) Teaching Artifacts to Produce
+
+- **README.md**: Overview, stack, quickstart, scripts, env vars, API reference, Stripe & Resend/Mailchimp setup, deployment, troubleshooting.  
+- **TUTORIAL.md**: Step-by-step (for beginners) matching the Stages above; each step shows commands, code blocks with comments, and expected terminal/browser output.  
+- **Commit Log**: Ensure clear messages per stage.  
+- **Seed Guide**: how to run `npm run seed` on server.
+
+---
+
+## 10) Scripts (examples)
+
+**Root**:
+- none required, but document how to start both concurrently if preferred.
+
+**client/package.json**:
+- `dev`, `build`, `preview`, `lint`
+
+**server/package.json**:
+- `dev` (nodemon/tsx), `start`, `seed`, `lint`
+
+Document exact commands in README.
+
+---
+
+## 11) Acceptance Criteria (do not skip)
+
+- `npm run dev` (client) and `npm run dev` (server) both work locally with seeded data.  
+- Visiting `/` shows the 7 teas, product pages open, cart works.  
+- Checkout chooses Stripe if keys present; otherwise shows working Request Order form that triggers email or logs safely.  
+- Newsletter and Contact forms validate and respond with user feedback.  
+- Optional admin is functional if JWT is enabled.  
+- README and TUTORIAL let a beginner reproduce the project from zero.
+
+---
+
+## 12) Copy-Paste Blocks
+
+For every file you create or modify, output **full file contents** (ready to replace) with **clear file paths**, and include **inline comments** explaining non-obvious parts.
+
+---
+
+## 13) Optional Enhancements (document but don’t block MVP)
+
+- Cloudinary for image hosting  
+- Husky precommit (lint/format)  
+- Basic integration tests (supertest) for APIs  
+- Sitemap/robots, OpenGraph images
+
+---
+
+**Now proceed to:**
+1) Scaffold the monorepo and print the final folder tree.  
+2) Generate all code with comments, staged per the plan with commit messages.  
+3) Provide seed data and how to run it.  
+4) Write `README.md` and `TUTORIAL.md`.  
+5) Include deployment instructions and an “export as zip” note.
+
+--- 
+
+**End of Prompt**
+
+--------------------------------------------------------------------------------
+

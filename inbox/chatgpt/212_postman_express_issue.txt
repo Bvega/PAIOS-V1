@@ -1,0 +1,72 @@
+Title: Postman Express Issue
+Created: 2025-07-08 14:56:06
+Updated: 2025-07-08 15:03:38
+================================================================================
+
+USER:
+i am using postman and i cant get the right reponse, heres i the server.js code : " // server.js
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// GET /products/:productId —— dynamic segment lives in req.params.productId
+app.get("/user/:userName", (req, res) => {
+  const { userName } = req.params;
+  res.send(`Fetching data for user with the required Name: ${userName}`);
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+}); " and the cpation
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Use a GET request to `http://localhost:3000/user/<someName>`—the `<someName>` part is the dynamic **route parameter** that fills `req.params.userName`.
+
+### Quick checklist
+
+| What to check | Correct value |
+|---------------|---------------|
+| **HTTP verb** | **GET** (not POST/PUT) |
+| **URL**       | `http://localhost:3000/user/Bolivar` (example) |
+| **Headers**   | None required |
+| **Body**      | Empty |
+
+If you still want JSON instead of a plain string, update the handler:
+
+```js
+// server.js
+const express = require("express");
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get("/user/:userName", (req, res) => {
+  const { userName } = req.params;
+  res.json({ message: `Fetching data for user ${userName}`, userName });
+});
+
+app.listen(PORT, () =>
+  console.log(`Server running at http://localhost:${PORT}`)
+);
+```
+
+Restart the server (`Ctrl-C`, then `node server.js`) and hit the same URL in Postman—you should now see:
+
+```json
+{
+  "message": "Fetching data for user Bolivar",
+  "userName": "Bolivar"
+}
+```
+
+Common mistakes that yield “cannot GET /” or 404:
+
+1. Using POST instead of GET.  
+2. Calling `/user?userName=Bolivar` instead of `/user/Bolivar`.  
+3. Misspelling the route (`/users/` vs `/user/`).  
+4. Server not restarted after editing code.
+
+--------------------------------------------------------------------------------
+

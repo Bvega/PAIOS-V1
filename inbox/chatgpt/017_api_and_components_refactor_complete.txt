@@ -1,0 +1,846 @@
+Title: API and components refactor complete
+Created: 2025-11-06 09:17:37
+Updated: 2025-11-09 09:09:33
+================================================================================
+
+USER:
+Refactor utils/api.js, Login.jsx, Dashboard.jsx, and AddProjectForm.jsx to remove duplicate /api prefix, correct baseURL to http://localhost:5000, and adjust imports accordingly so that API calls hit correct endpoints and token is properly included.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Create axios instance with correct baseURL
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Attach Authorization token if available
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named exports only — no default export
+export const registerUser = (data) => api.post("/auth/register", data);
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+```
+
+---
+
+```jsx
+// ✅ src/pages/Login.jsx
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+
+export default function Login() {
+  const { login } = useAuth();
+  const [form, setForm] = useState({ email: "", password: "" });
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await login(form);
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-xl rounded-2xl p-8 w-96 space-y-5"
+      >
+        <h2 className="text-3xl font-semibold text-center text-indigo-700">
+          Sign In
+        </h2>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          required
+        />
+        <button
+          type="submit"
+          className="w-full bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all"
+        >
+          Login
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+---
+
+```jsx
+// ✅ src/pages/Dashboard.jsx
+import { useEffect, useState } from "react";
+import { getProjects } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
+import AddProjectForm from "../components/AddProjectForm";
+
+export default function Dashboard() {
+  const { user, logout } = useAuth();
+  const [projects, setProjects] = useState([]);
+
+  const loadProjects = async () => {
+    const { data } = await getProjects();
+    setProjects(data);
+  };
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <header className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold text-indigo-700">
+          Welcome, {user?.name || "User"}
+        </h1>
+        <button
+          onClick={logout}
+          className="bg-red-500 text-white px-5 py-2 rounded-xl hover:bg-red-600 transition-all"
+        >
+          Logout
+        </button>
+      </header>
+
+      <AddProjectForm onProjectAdded={loadProjects} />
+
+      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 mt-8">
+        {projects.map((project) => (
+          <div
+            key={project._id}
+            className="bg-white shadow-md rounded-2xl p-5 hover:shadow-xl transition-all"
+          >
+            <h3 className="text-xl font-semibold text-gray-800">
+              {project.title}
+            </h3>
+            <p className="text-gray-500 mt-2">{project.description}</p>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+```
+
+---
+
+```jsx
+// ✅ src/components/AddProjectForm.jsx
+import { useState } from "react";
+import { createProject } from "../utils/api";
+
+export default function AddProjectForm({ onProjectAdded }) {
+  const [form, setForm] = useState({ title: "", description: "" });
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await createProject(form);
+    setForm({ title: "", description: "" });
+    onProjectAdded?.();
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white shadow-md rounded-2xl p-6 max-w-lg mx-auto space-y-4"
+    >
+      <h2 className="text-2xl font-semibold text-indigo-700 text-center">
+        Add New Project
+      </h2>
+      <input
+        type="text"
+        name="title"
+        placeholder="Project Title"
+        value={form.title}
+        onChange={handleChange}
+        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+        required
+      />
+      <textarea
+        name="description"
+        placeholder="Project Description"
+        value={form.description}
+        onChange={handleChange}
+        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+        rows="3"
+        required
+      />
+      <button
+        type="submit"
+        className="w-full bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all"
+      >
+        Create Project
+      </button>
+    </form>
+  );
+}
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor utils/api.js, Login.jsx, Dashboard.jsx, and AddProjectForm.jsx to remove duplicate /api prefix, correct baseURL to http://localhost:5000, and adjust imports accordingly so that API calls hit correct endpoints and token is properly included.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Correct baseURL and remove duplicate /api prefix
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Automatically attach token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named exports only
+export const registerUser = (data) => api.post("/auth/register", data);
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+```
+
+---
+
+```jsx
+// ✅ src/pages/Login.jsx
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+
+export default function Login() {
+  const { login } = useAuth();
+  const [form, setForm] = useState({ email: "", password: "" });
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await login(form);
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-lg rounded-2xl p-8 w-96 space-y-5"
+      >
+        <h2 className="text-3xl font-semibold text-center text-indigo-700">
+          Login
+        </h2>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          required
+        />
+        <button
+          type="submit"
+          className="w-full bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all"
+        >
+          Sign In
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+---
+
+```jsx
+// ✅ src/pages/Dashboard.jsx
+import { useEffect, useState } from "react";
+import { getProjects } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
+import AddProjectForm from "../components/AddProjectForm";
+
+export default function Dashboard() {
+  const { user, logout } = useAuth();
+  const [projects, setProjects] = useState([]);
+
+  const loadProjects = async () => {
+    const { data } = await getProjects();
+    setProjects(data);
+  };
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <header className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold text-indigo-700">
+          Welcome, {user?.name || "User"}
+        </h1>
+        <button
+          onClick={logout}
+          className="bg-red-500 text-white px-5 py-2 rounded-xl hover:bg-red-600 transition-all"
+        >
+          Logout
+        </button>
+      </header>
+
+      <AddProjectForm onProjectAdded={loadProjects} />
+
+      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 mt-8">
+        {projects.map((project) => (
+          <div
+            key={project._id}
+            className="bg-white shadow-md rounded-2xl p-5 hover:shadow-xl transition-all"
+          >
+            <h3 className="text-xl font-semibold text-gray-800">
+              {project.title}
+            </h3>
+            <p className="text-gray-500 mt-2">{project.description}</p>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+```
+
+---
+
+```jsx
+// ✅ src/components/AddProjectForm.jsx
+import { useState } from "react";
+import { createProject } from "../utils/api";
+
+export default function AddProjectForm({ onProjectAdded }) {
+  const [form, setForm] = useState({ title: "", description: "" });
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await createProject(form);
+    setForm({ title: "", description: "" });
+    onProjectAdded?.();
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white shadow-md rounded-2xl p-6 max-w-lg mx-auto space-y-4"
+    >
+      <h2 className="text-2xl font-semibold text-indigo-700 text-center">
+        Add Project
+      </h2>
+      <input
+        type="text"
+        name="title"
+        placeholder="Project Title"
+        value={form.title}
+        onChange={handleChange}
+        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+        required
+      />
+      <textarea
+        name="description"
+        placeholder="Project Description"
+        value={form.description}
+        onChange={handleChange}
+        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+        rows="3"
+        required
+      />
+      <button
+        type="submit"
+        className="w-full bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all"
+      >
+        Create Project
+      </button>
+    </form>
+  );
+}
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor utils/api.js, Login.jsx, Dashboard.jsx, and AddProjectForm.jsx to remove duplicate /api prefix, correct baseURL to http://localhost:5000, and adjust imports accordingly so that API calls hit correct endpoints and token is properly included.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Configure baseURL (no duplicate /api prefix)
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Automatically attach Authorization token if it exists
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Named API methods
+export const registerUser = (data) => api.post("/auth/register", data);
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+```
+
+---
+
+```jsx
+// ✅ src/pages/Login.jsx
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+
+export default function Login() {
+  const { login } = useAuth();
+  const [form, setForm] = useState({ email: "", password: "" });
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await login(form);
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-lg rounded-2xl p-8 w-96 space-y-5"
+      >
+        <h2 className="text-3xl font-semibold text-center text-indigo-700">
+          Login
+        </h2>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          required
+        />
+        <button
+          type="submit"
+          className="w-full bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all"
+        >
+          Sign In
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+---
+
+```jsx
+// ✅ src/pages/Dashboard.jsx
+import { useEffect, useState } from "react";
+import { getProjects } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
+import AddProjectForm from "../components/AddProjectForm";
+
+export default function Dashboard() {
+  const { user, logout } = useAuth();
+  const [projects, setProjects] = useState([]);
+
+  const loadProjects = async () => {
+    const { data } = await getProjects();
+    setProjects(data);
+  };
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <header className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold text-indigo-700">
+          Welcome, {user?.name || "User"}
+        </h1>
+        <button
+          onClick={logout}
+          className="bg-red-500 text-white px-5 py-2 rounded-xl hover:bg-red-600 transition-all"
+        >
+          Logout
+        </button>
+      </header>
+
+      <AddProjectForm onProjectAdded={loadProjects} />
+
+      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 mt-8">
+        {projects.map((project) => (
+          <div
+            key={project._id}
+            className="bg-white shadow-md rounded-2xl p-5 hover:shadow-xl transition-all"
+          >
+            <h3 className="text-xl font-semibold text-gray-800">
+              {project.title}
+            </h3>
+            <p className="text-gray-500 mt-2">{project.description}</p>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+```
+
+---
+
+```jsx
+// ✅ src/components/AddProjectForm.jsx
+import { useState } from "react";
+import { createProject } from "../utils/api";
+
+export default function AddProjectForm({ onProjectAdded }) {
+  const [form, setForm] = useState({ title: "", description: "" });
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await createProject(form);
+    setForm({ title: "", description: "" });
+    onProjectAdded?.();
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white shadow-md rounded-2xl p-6 max-w-lg mx-auto space-y-4"
+    >
+      <h2 className="text-2xl font-semibold text-indigo-700 text-center">
+        Add Project
+      </h2>
+      <input
+        type="text"
+        name="title"
+        placeholder="Project Title"
+        value={form.title}
+        onChange={handleChange}
+        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+        required
+      />
+      <textarea
+        name="description"
+        placeholder="Project Description"
+        value={form.description}
+        onChange={handleChange}
+        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+        rows="3"
+        required
+      />
+      <button
+        type="submit"
+        className="w-full bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all"
+      >
+        Create Project
+      </button>
+    </form>
+  );
+}
+```
+
+--------------------------------------------------------------------------------
+
+USER:
+Refactor utils/api.js, Login.jsx, Dashboard.jsx, and AddProjectForm.jsx to remove duplicate /api prefix, correct baseURL to http://localhost:5000, and adjust imports accordingly so that API calls hit correct endpoints and token is properly included.
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+```javascript
+// ✅ src/utils/api.js
+import axios from "axios";
+
+// Correct baseURL without duplicate /api prefix
+const api = axios.create({
+  baseURL: "http://localhost:5000",
+  headers: { "Content-Type": "application/json" },
+});
+
+// Automatically attach Authorization token if stored
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    try {
+      config.headers.Authorization = `Bearer ${JSON.parse(token)}`;
+    } catch {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Export API calls
+export const registerUser = (data) => api.post("/auth/register", data);
+export const loginUser = (data) => api.post("/auth/login", data);
+export const getProjects = () => api.get("/projects");
+export const createProject = (data) => api.post("/projects", data);
+```
+
+---
+
+```jsx
+// ✅ src/pages/Login.jsx
+import { useState } from "react";
+import { useAuth } from "../context/AuthContext";
+
+export default function Login() {
+  const { login } = useAuth();
+  const [form, setForm] = useState({ email: "", password: "" });
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await login(form);
+  };
+
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-50 to-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white shadow-lg rounded-2xl p-8 w-96 space-y-5"
+      >
+        <h2 className="text-3xl font-semibold text-center text-indigo-700">
+          Login
+        </h2>
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          required
+        />
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+          required
+        />
+        <button
+          type="submit"
+          className="w-full bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all"
+        >
+          Sign In
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+---
+
+```jsx
+// ✅ src/pages/Dashboard.jsx
+import { useEffect, useState } from "react";
+import { getProjects } from "../utils/api";
+import { useAuth } from "../context/AuthContext";
+import AddProjectForm from "../components/AddProjectForm";
+
+export default function Dashboard() {
+  const { user, logout } = useAuth();
+  const [projects, setProjects] = useState([]);
+
+  const loadProjects = async () => {
+    const { data } = await getProjects();
+    setProjects(data);
+  };
+
+  useEffect(() => {
+    loadProjects();
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-8">
+      <header className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold text-indigo-700">
+          Welcome, {user?.name || "User"}
+        </h1>
+        <button
+          onClick={logout}
+          className="bg-red-500 text-white px-5 py-2 rounded-xl hover:bg-red-600 transition-all"
+        >
+          Logout
+        </button>
+      </header>
+
+      <AddProjectForm onProjectAdded={loadProjects} />
+
+      <section className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 mt-8">
+        {projects.map((project) => (
+          <div
+            key={project._id}
+            className="bg-white shadow-md rounded-2xl p-5 hover:shadow-xl transition-all"
+          >
+            <h3 className="text-xl font-semibold text-gray-800">
+              {project.title}
+            </h3>
+            <p className="text-gray-500 mt-2">{project.description}</p>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+```
+
+---
+
+```jsx
+// ✅ src/components/AddProjectForm.jsx
+import { useState } from "react";
+import { createProject } from "../utils/api";
+
+export default function AddProjectForm({ onProjectAdded }) {
+  const [form, setForm] = useState({ title: "", description: "" });
+
+  const handleChange = (e) =>
+    setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await createProject(form);
+    setForm({ title: "", description: "" });
+    onProjectAdded?.();
+  };
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="bg-white shadow-md rounded-2xl p-6 max-w-lg mx-auto space-y-4"
+    >
+      <h2 className="text-2xl font-semibold text-indigo-700 text-center">
+        Add Project
+      </h2>
+      <input
+        type="text"
+        name="title"
+        placeholder="Project Title"
+        value={form.title}
+        onChange={handleChange}
+        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+        required
+      />
+      <textarea
+        name="description"
+        placeholder="Project Description"
+        value={form.description}
+        onChange={handleChange}
+        className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500"
+        rows="3"
+        required
+      />
+      <button
+        type="submit"
+        className="w-full bg-indigo-600 text-white p-3 rounded-xl hover:bg-indigo-700 transition-all"
+      >
+        Create Project
+      </button>
+    </form>
+  );
+}
+```
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+This automation has been paused due to too many unread executions. You can resume it in automations settings or by asking ChatGPT.
+
+--------------------------------------------------------------------------------
+

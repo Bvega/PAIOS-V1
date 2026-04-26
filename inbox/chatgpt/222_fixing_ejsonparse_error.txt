@@ -1,0 +1,109 @@
+Title: Fixing EJSONPARSE Error
+Created: 2025-07-05 00:13:56
+Updated: 2025-07-05 00:15:15
+================================================================================
+
+USER:
+The Netlify deploy errored, with the following guidance provided:
+
+**Diagnosis:**
+The build is failing during the stage of installing dependencies. The error is `npm error code EJSONPARSE` which indicates an issue with parsing the `package.json` file.
+
+**Solution:**
+1. Verify the `package.json` file in the repository is valid JSON format without any syntax errors.
+2. Check for any non-whitespace characters or errors around line 32, column 1 as mentioned in the error message.
+3. Make sure there are no trailing commas or other syntax mistakes in the `package.json` file.
+4. Once the `package.json` file is corrected, trigger the build again to ensure successful dependency installation.
+
+The relevant error logs are:
+
+Line 0: Build ready to start
+Line 1: build-image version: 9d5e089ad8ecaafb0161bb0f3dc3590dda973c71 (noble)
+Line 2: buildbot version: 9d5e089ad8ecaafb0161bb0f3dc3590dda973c71
+Line 3: Fetching cached dependencies
+Line 4: Failed to fetch cache, continuing with build
+Line 5: Starting to prepare the repo for build
+Line 6: No cached dependencies found. Cloning fresh repo
+Line 7: git clone --filter=blob:none https://github.com/Bvega/recipe-discovery-app-fresh
+Line 8: Preparing Git Reference refs/heads/main
+Line 9: Starting to install dependencies
+Line 10: Using PHP version
+Line 11: v22.17.0 is already installed.
+Line 12: Failed during stage 'Install dependencies': dependency_installation script returned non-zero exit code: 1
+Line 13: Now using node v22.17.0 (npm v10.9.2)
+Line 14: Enabling Node.js Corepack
+Line 15: Started restoring cached build plugins
+Line 16: Finished restoring cached build plugins
+Line 17: Started restoring cached corepack dependencies
+Line 18: Finished restoring cached corepack dependencies
+Line 19: No npm workspaces detected
+Line 20: Started restoring cached node modules
+Line 21: Finished restoring cached node modules
+Line 22: Installing npm packages using npm version 10.9.2
+Line 23: npm error code EJSONPARSE
+Line 24: npm error path /opt/build
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+The Netlify build is failing due to a malformed `package.json`. Here’s how to fix it:
+
+---
+
+### ✅ Step-by-Step Fix:
+
+1. **Open `package.json`** in your project root.
+
+2. **Validate JSON Format**:
+   - Use an online validator like: [https://jsonlint.com](https://jsonlint.com)  
+   - Or validate locally via CLI:
+     ```bash
+     cat package.json | jq empty
+     ```
+     If you don’t have `jq`, install it or stick to online tools.
+
+3. **Common Fixes to Look for**:
+   - **Trailing commas**:
+     ```json
+     "scripts": {
+       "start": "vite",
+     } ← ❌ Invalid
+     ```
+   - **Unquoted keys** or values.
+   - **Mismatched braces or brackets**.
+   - **Line 32** is a clue from the Netlify error. Go directly there and check for syntax errors.
+
+4. **Re-save file using UTF-8 (without BOM)** in your editor.
+
+5. **Example of a Correct `package.json`** (truncated):
+   ```json
+   {
+     "name": "recipe-discovery-app",
+     "version": "1.0.0",
+     "scripts": {
+       "dev": "vite",
+       "build": "vite build",
+       "preview": "vite preview"
+     },
+     "dependencies": {
+       "react": "^18.2.0",
+       "react-dom": "^18.2.0"
+     }
+   }
+   ```
+
+6. **Commit the fix** and push:
+   ```bash
+   git add package.json
+   git commit -m "Fix: corrected JSON syntax in package.json"
+   git push origin main
+   ```
+
+7. **Re-trigger Netlify build** from the Netlify dashboard or wait for auto-build.
+
+---
+
+If you want me to verify the file, paste your full `package.json` here. I’ll spot and correct the syntax directly.
+
+--------------------------------------------------------------------------------
+

@@ -1,0 +1,71 @@
+Title: Outlook Attachment Download Script
+Created: 2024-10-26 02:42:59
+Updated: 2024-10-26 02:43:08
+================================================================================
+
+USER:
+As an outlook expert can you make a script to search and download to a specific folder attachments tha contains contracts from my users?
+
+--------------------------------------------------------------------------------
+
+ASSISTANT:
+Yes, here's a script in PowerShell that can automate the search and download of attachments containing contracts from your Outlook account. This script will:
+
+1. Search your Outlook inbox for emails with attachments.
+2. Download attachments that contain "contract" in the file name to a specific folder.
+
+You'll need to specify your target folder in the script. Ensure that Outlook is running when executing this script.
+
+```powershell
+# Define the folder path where attachments will be saved
+$savePath = "C:\Path\To\Save\Folder"
+
+# Create the folder if it doesn't exist
+if (!(Test-Path -Path $savePath)) {
+    New-Item -ItemType Directory -Path $savePath
+}
+
+# Create Outlook COM object
+$Outlook = New-Object -ComObject Outlook.Application
+$Namespace = $Outlook.GetNamespace("MAPI")
+
+# Access the inbox folder
+$Inbox = $Namespace.GetDefaultFolder([Microsoft.Office.Interop.Outlook.OlDefaultFolders]::olFolderInbox)
+
+# Search for emails with attachments in the inbox
+$emails = $Inbox.Items | Where-Object {
+    $_.Attachments.Count -gt 0 -and $_.Subject -like "*contract*"
+}
+
+# Loop through each email with attachments
+foreach ($email in $emails) {
+    # Loop through each attachment in the email
+    foreach ($attachment in $email.Attachments) {
+        # Check if the attachment contains "contract" in its name
+        if ($attachment.FileName -match "contract") {
+            # Define the full path for saving the attachment
+            $filePath = Join-Path -Path $savePath -ChildPath $attachment.FileName
+
+            # Save the attachment to the specified folder
+            $attachment.SaveAsFile($filePath)
+            Write-Output "Saved attachment: $filePath"
+        }
+    }
+}
+```
+
+### Explanation of the Script
+- **$savePath**: Set this to the folder where you want to save attachments.
+- **$Outlook COM Object**: Creates an Outlook instance to interact with your inbox.
+- **Filtering Emails and Attachments**: Searches the inbox for emails that contain attachments with "contract" in their subject and file name.
+- **Saving Attachments**: Saves each qualifying attachment to the specified folder.
+
+### Instructions to Run the Script
+1. Open PowerShell with administrator privileges.
+2. Copy the script into PowerShell and press Enter.
+3. The script will automatically download attachments with "contract" in their file name to your specified folder.
+
+Let me know if you’d like any adjustments!
+
+--------------------------------------------------------------------------------
+
