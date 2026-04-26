@@ -1,12 +1,17 @@
 # start_pipeline.py
 # ============================================
-# PAIOS Pipeline Entry Point
+# PAIOS Master Pipeline (FIXED ORDER)
 # ============================================
 
 import os
 import sys
 import shutil
 from datetime import datetime
+
+# Import modules
+from scripts.preprocess import process_file
+from scripts.indexer import update_index
+from scripts.summarize import generate_summaries
 
 
 # ============================================
@@ -18,133 +23,90 @@ def timestamp():
 
 
 # ============================================
-# Ensure Required Structure
+# Ensure directories exist
 # ============================================
 
-def ensure_structure():
-    """
-    Ensure all required runtime folders exist.
-    This prevents indexer failures when folders are missing.
-    """
-    required_dirs = [
-        "memory",
-        "memory/processed",
-        "memory/index",
-        "outputs"
-    ]
-
-    for path in required_dirs:
-        os.makedirs(path, exist_ok=True)
+def ensure_dirs():
+    os.makedirs("memory/processed", exist_ok=True)
+    os.makedirs("memory/index", exist_ok=True)
+    os.makedirs("memory/summaries", exist_ok=True)
 
 
 # ============================================
-# Clean Runtime
+# Clean mode
 # ============================================
 
-def clean_runtime():
-    """
-    Remove runtime data for clean test runs.
-    """
-    for folder in ["memory", "outputs"]:
-        if os.path.exists(folder):
-            shutil.rmtree(folder)
-            print(f"[CLEAN] Removed {folder}/")
+def clean_memory():
+    if os.path.exists("memory/processed"):
+        shutil.rmtree("memory/processed")
+        print("[CLEAN] Removed memory/processed")
 
+    if os.path.exists("memory/index"):
+        shutil.rmtree("memory/index")
+        print("[CLEAN] Removed memory/index")
 
-# ============================================
-# File Discovery
-# ============================================
-
-def get_txt_files(input_path):
-    txt_files = []
-
-    for root, _, files in os.walk(input_path):
-        for file_name in files:
-            if file_name.endswith(".txt"):
-                txt_files.append(os.path.join(root, file_name))
-
-    return txt_files
+    if os.path.exists("memory/summaries"):
+        shutil.rmtree("memory/summaries")
+        print("[CLEAN] Removed memory/summaries")
 
 
 # ============================================
-# Preprocessing Wrapper
-# ============================================
-
-def run_preprocessing(file_path):
-    """
-    Safe wrapper to support evolving preprocess module.
-    """
-    try:
-        from scripts.preprocess import preprocess_file
-        return preprocess_file(file_path)
-
-    except ImportError:
-        try:
-            from scripts.preprocess import process_file
-            return process_file(file_path)
-
-        except ImportError:
-            # fallback safe read
-            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
-                return f.read()
-
-
-# ============================================
-# Indexing
-# ============================================
-
-def run_indexing():
-    """
-    Run index builder.
-    """
-    try:
-        from scripts.indexer import update_index
-        update_index()
-        print(f"[{timestamp()}] Index updated")
-
-    except Exception as e:
-        print(f"[WARNING] Index update failed: {e}")
-
-
-# ============================================
-# Main Pipeline
+# Pipeline
 # ============================================
 
 def run_pipeline(input_path, clean=False):
     print(f"[{timestamp()}] PAIOS pipeline started")
 
     if clean:
-        clean_runtime()
+        clean_memory()
 
-    # CRITICAL FIX: always rebuild structure after clean
-    ensure_structure()
+    ensure_dirs()
 
-    if not os.path.exists(input_path):
-        print(f"[ERROR] Path not found: {input_path}")
-        return
-
-    files = get_txt_files(input_path)
+    files = os.listdir(input_path)
     print(f"[{timestamp()}] Files detected: {len(files)}")
 
-    if not files:
-        print(f"[WARNING] No .txt files found")
-        return
+    processed_count = 0
 
-    # Process files
-    for file_path in files:
-        try:
-            run_preprocessing(file_path)
-        except Exception as e:
-            print(f"[ERROR] Failed processing {file_path}: {e}")
+    # ----------------------------------------
+    # STEP 1 — PREPROCESS
+    # ----------------------------------------
+    for file in files:
+        full_path = os.path.join(input_path, file)
 
-    # Build index
-    run_indexing()
+        if not os.path.isfile(full_path):
+            print(f"[SKIP] Non-file: {file}")
+            continue
+
+        content = process_file(full_path)
+
+        if not content:
+            print(f"[SKIP] Unsupported: {file}")
+            continue
+
+        output_path = os.path.join("memory/processed", file)
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        processed_count += 1
+
+    print(f"[{timestamp()}] Processed files: {processed_count}")
+
+    # ----------------------------------------
+    # STEP 2 — SUMMARIZE (FIXED POSITION)
+    # ----------------------------------------
+    generate_summaries("memory/processed")
+
+    # ----------------------------------------
+    # STEP 3 — INDEX (AFTER SUMMARIES)
+    # ----------------------------------------
+    update_index()
 
     print(f"[{timestamp()}] PAIOS pipeline finished")
 
 
 # ============================================
-# CLI Entry
+# CLI
 # ============================================
 
 if __name__ == "__main__":

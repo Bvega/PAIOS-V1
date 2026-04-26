@@ -3,15 +3,16 @@
 # PAIOS Search Test Script
 # ============================================
 # Purpose:
-# - Validate that the index has searchable content.
-# - Run several simple test queries against memory/index/index.json.
-# - Print clear results for debugging.
+# - Test the current search index.
+# - Print ranked search results.
+# - Show preview snippets.
+# - Show relevance reasons for each result.
 #
 # Usage:
 # python3 test_query.py
 
-import json
 import os
+from scripts.search import search_index
 
 
 # ============================================
@@ -30,97 +31,12 @@ TEST_QUERIES = [
 
 
 # ============================================
-# Load Index
-# ============================================
-
-def load_index():
-    """
-    Load the current PAIOS search index.
-    """
-    if not os.path.exists(INDEX_PATH):
-        print(f"Index not found: {INDEX_PATH}")
-        return []
-
-    with open(INDEX_PATH, "r", encoding="utf-8") as file:
-        return json.load(file)
-
-
-# ============================================
-# Score Result
-# ============================================
-
-def score_entry(entry, query):
-    """
-    Simple keyword score.
-
-    Checks:
-    - file name
-    - preview content if present
-    - text path content if available
-    """
-    query = query.lower()
-    score = 0
-
-    file_name = str(entry.get("file_name", "")).lower()
-    preview = str(entry.get("preview", "")).lower()
-
-    if query in file_name:
-        score += 10
-
-    if query in preview:
-        score += 5
-
-    text_path = entry.get("text_path")
-
-    if text_path and os.path.exists(text_path):
-        try:
-            with open(text_path, "r", encoding="utf-8", errors="ignore") as file:
-                content = file.read().lower()
-
-            if query in content:
-                score += content.count(query)
-
-        except Exception:
-            pass
-
-    return score
-
-
-# ============================================
-# Search Index
-# ============================================
-
-def search_index(index, query):
-    """
-    Search index entries and return sorted matches.
-    """
-    results = []
-
-    for entry in index:
-        score = score_entry(entry, query)
-
-        if score > 0:
-            results.append(
-                {
-                    "file_name": entry.get("file_name"),
-                    "score": score,
-                    "preview": entry.get("preview", ""),
-                    "text_path": entry.get("text_path"),
-                }
-            )
-
-    results.sort(key=lambda item: item["score"], reverse=True)
-
-    return results
-
-
-# ============================================
-# Print Results
+# Result Printer
 # ============================================
 
 def print_results(query, results):
     """
-    Print query results in a readable format.
+    Print search results in a readable debug format.
     """
     print("=" * 60)
     print(f"Query: {query}")
@@ -131,14 +47,23 @@ def print_results(query, results):
         return
 
     for index, result in enumerate(results[:5], 1):
-        print(f"[{index}] {result.get('file_name')} (score: {result.get('score')})")
+        file_name = result.get("file_name", "Unknown file")
+        score = result.get("score", 0)
+        path = result.get("text_path", "")
+        preview = result.get("preview", "")
+        reasons = result.get("reasons", [])
 
-        preview = result.get("preview") or ""
+        print(f"[{index}] {file_name} (score: {score})")
+        print(f"Path: {path}")
+
+        if reasons:
+            print("Reasons:")
+            for reason in reasons:
+                print(f"- {reason}")
 
         if preview:
-            print(f"Preview: {preview[:200]}")
+            print(f"Preview: {preview[:300]}")
 
-        print(f"Path: {result.get('text_path')}")
         print("-" * 60)
 
     print()
@@ -150,19 +75,19 @@ def print_results(query, results):
 
 def main():
     """
-    Run test queries against the current index.
+    Run all test queries against the indexed sample data.
     """
-    index = load_index()
-
-    print(f"Loaded index entries: {len(index)}\n")
-
-    if not index:
-        print("Index is empty. Run:")
+    if not os.path.exists(INDEX_PATH):
+        print("Index not found.")
+        print("Run this first:")
         print("python3 start_pipeline.py inbox/sample --clean")
         return
 
+    print("PAIOS Search Quality Test")
+    print(f"Index path: {INDEX_PATH}\n")
+
     for query in TEST_QUERIES:
-        results = search_index(index, query)
+        results = search_index(INDEX_PATH, query)
         print_results(query, results)
 
 

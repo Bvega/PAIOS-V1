@@ -1,3 +1,8 @@
+# scripts/indexer.py
+# ============================================
+# PAIOS Index Builder (FIXED SUMMARY LINK)
+# ============================================
+
 import os
 import json
 
@@ -5,22 +10,31 @@ import json
 def build_index(processed_path, index_path):
     index = []
 
+    # Ensure summary directory exists
+    summary_dir = "memory/summaries"
+
     for file in os.listdir(processed_path):
-        if file.endswith(".txt"):
-            base_name = os.path.splitext(file)[0]
+        if not file.endswith(".txt"):
+            continue
 
-            txt_path = os.path.join(processed_path, file)
-            meta_path = os.path.join(processed_path, base_name + ".meta.json")
-            summary_path = os.path.join("memory/summaries", base_name + ".summary.txt")
+        base_name = os.path.splitext(file)[0]
 
-            entry = {
-                "file_name": file,
-                "text_path": txt_path,
-                "metadata_path": meta_path if os.path.exists(meta_path) else None,
-                "summary_path": summary_path if os.path.exists(summary_path) else None
-            }
+        text_path = os.path.join(processed_path, file)
 
-            index.append(entry)
+        # FIX: Proper summary path mapping
+        summary_file = f"{base_name}_summary.txt"
+        summary_path = os.path.join(summary_dir, summary_file)
+
+        entry = {
+            "file_name": file,
+            "text_path": text_path,
+            "summary_path": summary_path if os.path.exists(summary_path) else None
+        }
+
+        index.append(entry)
+
+    # Save index
+    os.makedirs(os.path.dirname(index_path), exist_ok=True)
 
     with open(index_path, "w", encoding="utf-8") as f:
         json.dump(index, f, indent=2)
